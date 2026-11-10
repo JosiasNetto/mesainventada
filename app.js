@@ -1,6 +1,7 @@
 // Cola da tela única: estado, eventos e desenho. A lógica testável mora em src/.
 import { escolherMecanicas } from './src/mecanicas.js';
-import { MODELO_PADRAO } from './src/ia.js';
+import { MODELO_PADRAO, promptKit, chamarLLM } from './src/ia.js';
+import { validarKit } from './src/validador.js';
 
 const $ = sel => document.querySelector(sel);
 const el = (tag, texto, classe) => {
@@ -83,4 +84,165 @@ $('#salvar-config').addEventListener('click', () => {
   gravar('mi:modelo', $('#modelo').value.trim() || MODELO_PADRAO);
 });
 
+// ---- versões e geração -------------------------------------------------------
+
+const versaoAtual = () => projeto.versoes[projeto.atual];
+
+function adicionarVersao(v) {
+  projeto.versoes.push({ n: projeto.versoes.length + 1, criadaEm: new Date().toISOString(), ...v });
+  projeto.atual = projeto.versoes.length - 1;
+  gravar('mi:projeto', projeto);
+}
+
+function mostrarAviso(msg) {
+  $('#aviso').textContent = msg;
+  $('#aviso').hidden = !msg;
+}
+
+let carregando = false;
+async function gerar(mensagens, extras, botao = $('#criar')) {
+  if (carregando) return;
+  carregando = true;
+  const rotulo = botao.textContent;
+  const inicio = Date.now();
+  const tique = () => { botao.textContent = `Criando… ${Math.round((Date.now() - inicio) / 1000)} s`; };
+  botao.disabled = true;
+  tique();
+  const relogio = setInterval(tique, 1000);
+  try {
+    const semente = Math.floor(Math.random() * 1e6);
+    const kit = await chamarLLM({ chave: ler('mi:chave', ''), modelo: ler('mi:modelo', MODELO_PADRAO), mensagens, semente });
+    adicionarVersao({ ...extras, semente, kit });
+    mostrarAviso('');
+    render();
+  } catch (e) {
+    mostrarAviso(e.message);
+  } finally {
+    clearInterval(relogio);
+    botao.disabled = false;
+    botao.textContent = rotulo;
+    carregando = false;
+  }
+}
+
+$('#formulario').addEventListener('submit', e => {
+  e.preventDefault();
+  const entrada = lerFormulario();
+  if (!entrada.tema) { mostrarAviso('Escreva um tema para o jogo (ou clique no exemplo).'); $('#tema').focus(); return; }
+  if (!selecionadas.length) { mostrarAviso('Escolha uma mecânica (ou duas para combinar).'); return; }
+  if (!ler('mi:chave', '')) { abrirConfig(); return; }
+  gerar(promptKit(entrada, selecionadas), { origem: 'gerado', entrada, mecanicas: [...selecionadas] });
+});
+
+// ---- desenho do kit -----------------------------------------------------------
+
+const lista = x => (Array.isArray(x) ? x : []);
+const texto = x => String(x ?? '');
+
+function renderKit(kit, alvo, editavel) {
+  const k = kit && typeof kit === 'object' ? kit : {};
+  const c = (tag, valor, caminho, classe) => {
+    const e = el(tag, texto(valor), classe);
+    if (editavel) { e.contentEditable = 'plaintext-only'; e.dataset.caminho = caminho; }
+    return e;
+  };
+  const parte = (titulo, ...filhos) => {
+    const d = el('div', null, 'parte');
+    d.append(el('h4', titulo), ...filhos);
+    return d;
+  };
+  const ol = nome => {
+    const o = el('ol');
+    lista(k[nome]).forEach((x, i) => o.append(c('li', x, `${nome}.${i}`)));
+    return o;
+  };
+
+  const regras = el('div', null, 'regras');
+  regras.append(
+    c('h3', k.titulo, 'titulo', 'titulo-kit'),
+    parte('Objetivo', c('p', k.objetivo, 'objetivo')),
+    parte('Preparação', ol('preparacao')),
+    parte('Turno', ol('turno')),
+    parte('Fim', c('p', k.fim, 'fim')),
+  );
+
+  const grade = el('div', null, 'cartas');
+  lista(k.cartas).forEach((carta, i) => {
+    const cc = carta && typeof carta === 'object' ? carta : { nome: carta };
+    const d = el('div', null, 'carta');
+    const qtd = el('span', '×', 'carta-qtd');
+    qtd.append(c('span', Number(cc.quantidade) || 1, `cartas.${i}.quantidade`));
+    d.append(c('strong', cc.nome, `cartas.${i}.nome`, 'carta-nome'), c('p', cc.texto, `cartas.${i}.texto`, 'carta-texto'), qtd);
+    if (editavel) {
+      const x = el('button', '✕', 'carta-remover');
+      x.type = 'button';
+      x.dataset.remover = i;
+      x.setAttribute('aria-label', `Remover a carta ${texto(cc.nome)}`);
+      d.append(x);
+    }
+    grade.append(d);
+  });
+  if (editavel) {
+    const mais = el('button', '+ carta', 'carta carta-nova');
+    mais.type = 'button';
+    mais.dataset.acao = 'nova-carta';
+    grade.append(mais);
+  }
+
+  const rodada = el('div', null, 'nota-amarela rodada');
+  rodada.append(el('h4', 'rodada teste'), ol('rodada'));
+  const provocacao = el('p', null, 'provocacao');
+  provocacao.append(el('span', '❓ ', 'provocacao-icone'), c('span', k.provocacao, 'provocacao'));
+
+  alvo.replaceChildren(regras, parte('Cartas', grade), rodada, provocacao);
+}
+
+function renderTravas() {
+  const v = versaoAtual();
+  const avisos = v ? validarKit(v.kit, v.entrada) : [];
+  const ul = el('ul');
+  avisos.forEach(a => ul.append(el('li', a)));
+  $('#travas').replaceChildren(el('h4', 'Travas: o que conferir antes de imprimir'), ul);
+  $('#travas').hidden = !avisos.length;
+}
+
+function render() {
+  const v = versaoAtual();
+  $('#vazio').hidden = Boolean(v);
+  $('#saida').hidden = !v;
+  if (v) renderKit(v.kit, $('#kit'), true);
+  renderTravas();
+}
+
+// ---- edição no lugar ------------------------------------------------------------
+
+function definir(obj, caminho, valor) {
+  const partes = caminho.split('.');
+  const chave = partes.pop();
+  const alvo = partes.reduce((o, p) => (o && typeof o === 'object' ? o[p] : undefined), obj);
+  if (alvo && typeof alvo === 'object') alvo[chave] = chave === 'quantidade' ? Number(valor) || 1 : valor;
+}
+
+$('#kit').addEventListener('input', e => {
+  const v = versaoAtual();
+  const caminho = e.target.dataset?.caminho;
+  if (!v || !caminho) return;
+  definir(v.kit, caminho, e.target.textContent);
+  gravar('mi:projeto', projeto);
+  renderTravas();
+});
+
+$('#kit').addEventListener('click', e => {
+  const v = versaoAtual();
+  const b = e.target.closest('button');
+  if (!v || !b) return;
+  if (!Array.isArray(v.kit.cartas)) v.kit.cartas = [];
+  if (b.dataset.remover != null) v.kit.cartas.splice(Number(b.dataset.remover), 1);
+  else if (b.dataset.acao === 'nova-carta') v.kit.cartas.push({ nome: 'Nova carta', texto: 'Escreva o efeito', quantidade: 1 });
+  else return;
+  gravar('mi:projeto', projeto);
+  render();
+});
+
 renderMecanicas();
+render();

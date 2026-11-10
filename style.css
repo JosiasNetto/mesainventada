@@ -101,6 +101,45 @@ button.nota-amarela:hover { border-color: var(--tinta); }
 #aviso { background: var(--vermelho); border: 2px solid #b44; border-radius: 4px; padding: 12px 14px; margin-bottom: 20px; }
 .vazio { font-family: var(--mao); color: var(--caneta-azul); font-size: 1.2rem; max-width: 40ch; }
 
+/* ---- kit gerado ---- */
+.kit h4 { margin: 0 0 4px; font-size: 0.95rem; color: var(--tinta-suave); font-weight: 700; }
+.kit ol { margin: 0; padding-left: 1.4em; }
+.kit p { margin: 0; }
+.regras { max-width: 70ch; }
+.titulo-kit { font-size: 1.9rem; line-height: 1.15; margin: 0 0 14px; }
+.parte { margin-bottom: 14px; }
+[contenteditable] { border-radius: 3px; cursor: text; }
+[contenteditable]:hover { background: rgba(47, 90, 168, 0.06); }
+[contenteditable]:focus { outline: 2px dashed var(--caneta-azul); outline-offset: 2px; background: var(--branco); }
+
+.cartas { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px; padding: 6px 2px 10px; }
+.carta {
+  position: relative; aspect-ratio: 63 / 88; display: flex; flex-direction: column; gap: 8px;
+  background: var(--branco); border: 2px solid var(--tinta); border-radius: 8px; padding: 14px 12px 12px;
+  box-shadow: 2px 3px 0 rgba(43, 43, 43, 0.18); transform: rotate(-0.7deg); transition: transform 0.15s;
+}
+.carta:nth-child(even) { transform: rotate(0.6deg); }
+.carta:nth-child(3n) { transform: rotate(-0.2deg); }
+.carta:focus-within, .carta:hover { transform: none; }
+.carta::before { content: ''; position: absolute; inset: 5px; border: 1px dashed rgba(43, 43, 43, 0.25); border-radius: 5px; pointer-events: none; }
+.carta-nome { font-size: 1rem; line-height: 1.2; padding-bottom: 6px; border-bottom: 1.5px solid var(--tinta); }
+.carta-texto { font-size: 0.9rem; line-height: 1.35; flex: 1; }
+.carta-qtd { align-self: flex-end; font-family: var(--mao); color: var(--caneta-azul); font-size: 1.05rem; }
+.carta-remover {
+  position: absolute; top: -10px; right: -10px; width: 28px; height: 28px; border-radius: 50%;
+  border: 2px solid var(--tinta); background: var(--vermelho); font-size: 0.8rem; line-height: 1; z-index: 1;
+}
+.carta-nova { aspect-ratio: auto; min-height: 72px; align-self: start; align-items: center; justify-content: center; border-style: dashed; background: transparent; box-shadow: none; font-weight: 700; color: var(--tinta-suave); }
+.carta-nova::before { display: none; }
+
+.rodada { margin-top: 18px; font-family: var(--texto); color: var(--tinta); font-size: 0.98rem; }
+.rodada h4 { font-family: var(--mao); font-size: 1.1rem; color: var(--tinta-suave); }
+.provocacao { margin-top: 18px !important; font-family: var(--mao); font-size: 1.25rem; color: var(--caneta-azul); max-width: 60ch; }
+
+.travas { margin-top: 18px; border-left: 4px solid #b44; background: rgba(248, 215, 215, 0.55); padding: 10px 14px; border-radius: 0 4px 4px 0; }
+.travas ul { margin: 6px 0 0; padding-left: 1.2em; }
+.acoes { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; align-items: center; }
+
 dialog { border: 2px solid var(--tinta); border-radius: 6px; background: var(--papel); color: var(--tinta); max-width: 560px; width: calc(100% - 32px); padding: 24px; }
 dialog::backdrop { background: rgba(43, 43, 43, 0.45); }
 dialog ol { padding-left: 1.3em; }
