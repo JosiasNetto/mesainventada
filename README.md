@@ -6,7 +6,7 @@ Projeto Ferramenta, Criatividade Computacional 2026.2.
 
 ## Usar online
 
-**https://&lt;usuario&gt;.github.io/mesainventada/** (troque pelo endereço do GitHub Pages do grupo)
+**https://josiasnetto.github.io/mesainventada/**
 
 Tudo funciona no navegador, numa tela só. Não precisa instalar nada.
 
