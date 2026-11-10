@@ -206,11 +206,49 @@ function renderTravas() {
   $('#travas').hidden = !avisos.length;
 }
 
+// Módulo C — Print & Play: regras numa folha, cartas 63×88 mm em grades 3×3 por folha A4.
+function renderImpressao(kit) {
+  const k = kit && typeof kit === 'object' ? kit : {};
+  const regras = el('div', null, 'pagina pagina-regras');
+  const secao = (titulo, ...filhos) => { regras.append(el('h2', titulo), ...filhos); };
+  const ol = arr => { const o = el('ol'); lista(arr).forEach(x => o.append(el('li', texto(x)))); return o; };
+  regras.append(el('h1', texto(k.titulo)));
+  secao('Objetivo', el('p', texto(k.objetivo)));
+  secao('Preparação', ol(k.preparacao));
+  secao('Turno', ol(k.turno));
+  secao('Fim', el('p', texto(k.fim)));
+  secao('Exemplo de rodada', ol(k.rodada));
+  regras.append(el('p', 'Protótipo feito com MesaInventada. Teste, anote o que deu errado e revise.', 'rodape-impressao'));
+
+  const fisicas = lista(k.cartas).flatMap(c => {
+    const cc = c && typeof c === 'object' ? c : { nome: c };
+    return Array(Math.min(Number(cc.quantidade) || 1, 20)).fill(cc);
+  });
+  const paginas = [];
+  for (let i = 0; i < fisicas.length; i += 9) {
+    const grade = el('div', null, 'grade-cartas');
+    fisicas.slice(i, i + 9).forEach(cc => {
+      const d = el('div', null, 'carta-impressa');
+      d.append(el('strong', texto(cc.nome)), el('p', texto(cc.texto)), el('small', texto(k.titulo)));
+      grade.append(d);
+    });
+    const pagina = el('div', null, 'pagina');
+    pagina.append(grade);
+    paginas.push(pagina);
+  }
+  $('#impressao').replaceChildren(regras, ...paginas);
+}
+
+$('#baixar-pdf').addEventListener('click', () => window.print());
+
 function render() {
   const v = versaoAtual();
   $('#vazio').hidden = Boolean(v);
   $('#saida').hidden = !v;
-  if (v) renderKit(v.kit, $('#kit'), true);
+  if (v) {
+    renderKit(v.kit, $('#kit'), true);
+    renderImpressao(v.kit);
+  }
   renderTravas();
 }
 
@@ -230,6 +268,7 @@ $('#kit').addEventListener('input', e => {
   definir(v.kit, caminho, e.target.textContent);
   gravar('mi:projeto', projeto);
   renderTravas();
+  renderImpressao(v.kit);
 });
 
 $('#kit').addEventListener('click', e => {
