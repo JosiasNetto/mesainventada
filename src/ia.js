@@ -7,6 +7,11 @@ const RESERVAS = ['openrouter/free', 'google/gemma-4-31b-it:free'];
 const URL_API = 'https://openrouter.ai/api/v1/chat/completions';
 const LIMITE_TURNO = { facil: 3, medio: 5 };
 
+// A OpenRouter só mostra a chave inteira na criação; a lista de chaves mostra um pedaço ("sk-or-v1-a1b...9f2").
+export const chaveValida = chave => /^sk-or-v1-[A-Za-z0-9]{32,}$/.test(String(chave ?? ''));
+export const AVISO_CHAVE = 'Essa não parece uma chave completa da OpenRouter. Ela começa com "sk-or-v1-" e tem mais de 70 caracteres. '
+  + 'O site só mostra a chave inteira uma vez, na hora de criar: se você copiou da lista de chaves, crie uma nova em openrouter.ai/keys e copie pelo botão de copiar.';
+
 function sistema(entrada) {
   const limite = LIMITE_TURNO[entrada.dificuldade] ?? 5;
   return `Você é co-designer de jogos de cartas curtos na ferramenta MesaInventada.

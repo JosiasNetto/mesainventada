@@ -106,7 +106,7 @@
       <p>Para usar a IA você precisa de uma chave gratuita da OpenRouter:</p>
       <ol>
         <li>Crie uma conta em <a href="https://openrouter.ai" target="_blank" rel="noopener">openrouter.ai</a> (dá para entrar com Google ou GitHub).</li>
-        <li>Abra <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a> e clique em "Create API Key".</li>
+        <li>Abra <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a> e clique em "Create API Key". Copie a chave inteira na hora: ela só aparece uma vez.</li>
         <li>Cole a chave abaixo. Modelos terminados em ":free" não cobram nada.</li>
       </ol>
       <label class="campo">Chave da OpenRouter
@@ -116,6 +116,7 @@
         <input id="modelo" type="text" autocomplete="off">
       </label>
       <p class="dica">A chave fica salva só neste navegador e é enviada apenas para a OpenRouter.</p>
+      <p id="erro-chave" class="erro-chave" role="alert" hidden></p>
       <div class="linha">
         <button value="salvar" id="salvar-config" class="botao-principal">Salvar</button>
         <button value="fechar" class="botao-secundario">Fechar</button>

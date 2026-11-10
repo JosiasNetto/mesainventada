@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MODELO_PADRAO, promptKit, promptRevisao, extrairJSON, mensagemDeErro, chamarLLM } from '../src/ia.js';
+import { MODELO_PADRAO, promptKit, promptRevisao, extrairJSON, mensagemDeErro, chamarLLM, chaveValida } from '../src/ia.js';
 import { catalogo } from '../src/mecanicas.js';
 import { kitExemplo, entradaExemplo } from './kit-exemplo.js';
 
@@ -77,4 +77,11 @@ test('chamarLLM transforma falhas em avisos legíveis', async () => {
   await assert.rejects(chamarLLM(args), /conexão/);
   globalThis.fetch = async () => { throw new DOMException('t', 'TimeoutError'); };
   await assert.rejects(chamarLLM(args), /90 segundos/);
+});
+
+test('chaveValida aceita só a chave completa da OpenRouter', () => {
+  assert.ok(chaveValida('sk-or-v1-' + 'a1'.repeat(32)));
+  for (const ruim of ['', 'sk-or-v1-a1b...9f2', 'sk-or-v1-a1b…9f2', 'sk-or-v1-abc', '"sk-or-v1-' + 'a1'.repeat(32) + '"',
+                      'sk-or-v1-' + 'a1'.repeat(16) + ' ' + 'a1'.repeat(16), 'sk-proj-' + 'a1'.repeat(32), 'minha chave'])
+    assert.equal(chaveValida(ruim), false, ruim);
 });

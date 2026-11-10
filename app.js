@@ -1,6 +1,6 @@
 // Cola da tela única: estado, eventos e desenho. A lógica testável mora em src/.
 import { escolherMecanicas } from './src/mecanicas.js';
-import { MODELO_PADRAO, promptKit, promptRevisao, chamarLLM } from './src/ia.js';
+import { MODELO_PADRAO, promptKit, promptRevisao, chamarLLM, chaveValida, AVISO_CHAVE } from './src/ia.js';
 import { validarKit } from './src/validador.js';
 
 const $ = sel => document.querySelector(sel);
@@ -73,16 +73,32 @@ $('#exemplo').addEventListener('click', () => {
 $('#jogadores').addEventListener('change', renderMecanicas);
 document.querySelectorAll('input[name=material]').forEach(i => i.addEventListener('change', renderMecanicas));
 
-function abrirConfig() {
+function mostrarErroChave(msg) {
+  $('#erro-chave').textContent = msg;
+  $('#erro-chave').hidden = !msg;
+}
+
+function abrirConfig(erro = '') {
   $('#chave').value = ler('mi:chave', '');
   $('#modelo').value = ler('mi:modelo', MODELO_PADRAO);
+  mostrarErroChave(erro);
   $('#config').showModal();
 }
-$('#abrir-config').addEventListener('click', abrirConfig);
-$('#salvar-config').addEventListener('click', () => {
-  gravar('mi:chave', $('#chave').value.trim());
+$('#abrir-config').addEventListener('click', () => abrirConfig());
+$('#salvar-config').addEventListener('click', e => {
+  const chave = $('#chave').value.trim();
+  if (chave && !chaveValida(chave)) { e.preventDefault(); mostrarErroChave(AVISO_CHAVE); return; }
+  gravar('mi:chave', chave);
   gravar('mi:modelo', $('#modelo').value.trim() || MODELO_PADRAO);
 });
+
+// Sem chave: abre a configuração. Chave salva fora do formato (ex.: copiada da lista do site): abre com a explicação.
+function chaveOuConfig() {
+  const chave = ler('mi:chave', '');
+  if (chaveValida(chave)) return true;
+  abrirConfig(chave ? AVISO_CHAVE : '');
+  return false;
+}
 
 // ---- versões e geração -------------------------------------------------------
 
@@ -130,7 +146,7 @@ $('#formulario').addEventListener('submit', e => {
   const entrada = lerFormulario();
   if (!entrada.tema) { mostrarAviso('Escreva um tema para o jogo (ou clique no exemplo).'); $('#tema').focus(); return; }
   if (!selecionadas.length) { mostrarAviso('Escolha uma mecânica (ou duas para combinar).'); return; }
-  if (!ler('mi:chave', '')) { abrirConfig(); return; }
+  if (!chaveOuConfig()) return;
   gerar(promptKit(entrada, selecionadas), { origem: 'gerado', entrada, mecanicas: [...selecionadas] });
 });
 
@@ -220,8 +236,7 @@ function renderTravas() {
 
 async function revisar(relato, botao) {
   const v = versaoAtual();
-  if (!v) return;
-  if (!ler('mi:chave', '')) { abrirConfig(); return; }
+  if (!v || !chaveOuConfig()) return;
   await gerar(promptRevisao(v.entrada, v.kit, relato, validarKit(v.kit, v.entrada)),
     { origem: 'revisado', entrada: v.entrada, mecanicas: v.mecanicas, relato }, botao);
   if (versaoAtual() !== v) { $('#relato').value = ''; $('#relato-box').hidden = true; }
