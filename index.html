@@ -82,10 +82,17 @@
           <div id="kit" class="kit"></div>
           <div id="travas" class="travas" hidden></div>
           <div id="acoes" class="acoes">
+            <button type="button" id="relatar" class="botao-relatar">relatar dificuldade</button>
             <button type="button" id="baixar-pdf" class="botao-pdf">baixar PDF</button>
             <span class="dica">Na janela de impressão, escolha "Salvar como PDF".</span>
           </div>
+          <div id="relato-box" class="relato" hidden>
+            <label for="relato">O que aconteceu no teste?</label>
+            <textarea id="relato" rows="3" placeholder="O que aconteceu no teste? Ex.: acabou em 5 minutos, ninguém usou as cartas de troca..."></textarea>
+            <button type="button" id="revisar" class="botao-principal">Revisar com IA</button>
+          </div>
         </div>
+        <section id="comparacao" class="comparacao" hidden></section>
         <section id="historico" class="historico" hidden></section>
       </div>
     </main>

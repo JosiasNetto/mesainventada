@@ -1,6 +1,6 @@
 // Cola da tela única: estado, eventos e desenho. A lógica testável mora em src/.
 import { escolherMecanicas } from './src/mecanicas.js';
-import { MODELO_PADRAO, promptKit, chamarLLM } from './src/ia.js';
+import { MODELO_PADRAO, promptKit, promptRevisao, chamarLLM } from './src/ia.js';
 import { validarKit } from './src/validador.js';
 
 const $ = sel => document.querySelector(sel);
@@ -158,6 +158,12 @@ function renderKit(kit, alvo, editavel) {
   };
 
   const regras = el('div', null, 'regras');
+  if (lista(k.mudancas).length) {
+    const ul = el('ul');
+    k.mudancas.forEach(m => ul.append(el('li', texto(m))));
+    regras.append(parte('O que mudou', ul));
+    regras.lastChild.classList.add('mudancas');
+  }
   regras.append(
     c('h3', k.titulo, 'titulo', 'titulo-kit'),
     parte('Objetivo', c('p', k.objetivo, 'objetivo')),
@@ -202,8 +208,80 @@ function renderTravas() {
   const avisos = v ? validarKit(v.kit, v.entrada) : [];
   const ul = el('ul');
   avisos.forEach(a => ul.append(el('li', a)));
-  $('#travas').replaceChildren(el('h4', 'Travas: o que conferir antes de imprimir'), ul);
+  const corrigir = el('button', 'Pedir à IA para corrigir', 'botao-secundario');
+  corrigir.type = 'button';
+  corrigir.id = 'corrigir';
+  corrigir.addEventListener('click', () => revisar('Corrija os problemas apontados pelas travas.', corrigir));
+  $('#travas').replaceChildren(el('h4', 'Travas: o que conferir antes de imprimir'), ul, corrigir);
   $('#travas').hidden = !avisos.length;
+}
+
+// ---- revisão, histórico e comparação ------------------------------------------
+
+async function revisar(relato, botao) {
+  const v = versaoAtual();
+  if (!v) return;
+  if (!ler('mi:chave', '')) { abrirConfig(); return; }
+  await gerar(promptRevisao(v.entrada, v.kit, relato, validarKit(v.kit, v.entrada)),
+    { origem: 'revisado', entrada: v.entrada, mecanicas: v.mecanicas, relato }, botao);
+  if (versaoAtual() !== v) { $('#relato').value = ''; $('#relato-box').hidden = true; }
+}
+
+$('#relatar').addEventListener('click', () => {
+  $('#relato-box').hidden = false;
+  $('#relato').focus();
+});
+
+$('#revisar').addEventListener('click', () => {
+  const relato = $('#relato').value.trim();
+  if (!relato) { mostrarAviso('Conte o que aconteceu no teste para a IA saber o que revisar.'); $('#relato').focus(); return; }
+  revisar(relato, $('#revisar'));
+});
+
+function renderHistorico() {
+  const ol = el('ol', null, 'versoes');
+  projeto.versoes.forEach((v, i) => {
+    const li = el('li', null, i === projeto.atual ? 'atual' : '');
+    const hora = new Date(v.criadaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const rotulo = el('span', `v${v.n} · ${v.origem} · ${hora}`, 'rotulo-versao');
+    rotulo.title = `semente ${v.semente}${v.relato ? ` · relato: ${v.relato}` : ''}`;
+    li.append(rotulo);
+    if (i === projeto.atual) li.append(el('span', 'aberta', 'marca-atual'));
+    else {
+      const abrir = el('button', 'abrir', 'botao-texto');
+      abrir.type = 'button';
+      abrir.addEventListener('click', () => { projeto.atual = i; gravar('mi:projeto', projeto); render(); });
+      const comparar = el('button', 'comparar', 'botao-texto');
+      comparar.type = 'button';
+      comparar.addEventListener('click', () => compararCom(i));
+      li.append(abrir, comparar);
+    }
+    ol.prepend(li);
+  });
+  $('#historico').replaceChildren(el('h2', 'Versões'), ol);
+  $('#historico').hidden = !projeto.versoes.length;
+}
+
+function compararCom(i) {
+  const coluna = (v, titulo) => {
+    const d = el('div', null, 'coluna-comparacao');
+    const kit = el('div', null, 'kit');
+    renderKit(v.kit, kit, false);
+    d.append(el('h3', titulo, 'rotulo-versao'), kit);
+    return d;
+  };
+  const outra = projeto.versoes[i];
+  const atual = versaoAtual();
+  const fechar = el('button', 'fechar comparação', 'botao-secundario');
+  fechar.type = 'button';
+  fechar.addEventListener('click', () => { $('#comparacao').hidden = true; });
+  const grade = el('div', null, 'grade-comparacao');
+  grade.append(coluna(outra, `v${outra.n} · ${outra.origem}`), coluna(atual, `v${atual.n} · ${atual.origem} (aberta)`));
+  const topo = el('div', null, 'topo-comparacao');
+  topo.append(el('h2', 'Comparação lado a lado'), fechar);
+  $('#comparacao').replaceChildren(topo, grade);
+  $('#comparacao').hidden = false;
+  $('#comparacao').scrollIntoView({ block: 'start' });
 }
 
 // Módulo C — Print & Play: regras numa folha, cartas 63×88 mm em grades 3×3 por folha A4.
@@ -250,6 +328,8 @@ function render() {
     renderImpressao(v.kit);
   }
   renderTravas();
+  renderHistorico();
+  $('#comparacao').hidden = true;
 }
 
 // ---- edição no lugar ------------------------------------------------------------
