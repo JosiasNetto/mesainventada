@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MesaInventada</title>
+  <meta name="description" content="Crie e teste jogos de cartas curtos com uma IA parceira.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🃏</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topo">
+      <div>
+        <h1>MesaInventada</h1>
+        <p class="subtitulo">Crie e teste jogos de cartas curtos com uma IA parceira.</p>
+      </div>
+      <button type="button" id="abrir-config" class="botao-secundario">⚙ Configurar IA</button>
+    </header>
+
+    <details class="ajuda" open>
+      <summary>Como usar</summary>
+      <ol>
+        <li>Descreva o tema e quem vai jogar (ou clique no exemplo).</li>
+        <li>Escolha uma mecânica, ou duas para combinar. "↻ outras mecânicas" sorteia novas.</li>
+        <li>Clique em CRIAR JOGO. A IA escreve regras, cartas e uma rodada de teste, e tudo fica editável.</li>
+        <li>Jogue com papel, relate o que deu errado e peça uma revisão. Baixe o PDF para imprimir.</li>
+      </ol>
+      <p><strong>Onde a IA entra:</strong> as mecânicas oferecidas vêm de um catálogo fixo, sem IA. A IA (um modelo de linguagem via OpenRouter) decide as regras, o texto das cartas, a rodada de teste e a provocação, e reescreve o kit a partir do seu relato. As travas, também sem IA, avisam quando o resultado foge dos limites. A última palavra é sua: dá para editar, apagar ou voltar a qualquer versão.</p>
+    </details>
+
+    <main class="colunas">
+      <form id="formulario" class="coluna-entrada" novalidate>
+        <section class="bloco">
+          <h2><label for="tema">1. Qual o tema?</label></h2>
+          <input id="tema" type="text" required maxlength="200" placeholder="jogo cooperativo sobre espaço..." autocomplete="off">
+        </section>
+
+        <section class="bloco">
+          <h2>2. Quem vai jogar?</h2>
+          <div class="linha">
+            <label class="campo-numero"><input id="jogadores" type="number" min="2" max="8" value="4"> pessoas</label>
+            <label class="campo-numero"><input id="duracao" type="number" min="10" max="90" step="5" value="20"> min</label>
+          </div>
+          <fieldset class="materiais">
+            <legend>materiais:</legend>
+            <label><input type="checkbox" name="material" value="papel" checked disabled> papel</label>
+            <label><input type="checkbox" name="material" value="caneta" checked> caneta</label>
+            <label><input type="checkbox" name="material" value="dado" checked> dado</label>
+          </fieldset>
+          <button type="button" id="exemplo" class="nota-amarela">exemplo: "cooperativo no espaço, 4 pessoas, 20 min"</button>
+        </section>
+
+        <section class="bloco">
+          <h2>3. Escolha a mecânica</h2>
+          <p class="dica">Escolha 1, ou 2 para combinar.</p>
+          <div id="mecanicas" class="mecanicas"></div>
+          <p class="linha-semente">
+            <button type="button" id="outras" class="botao-texto">↻ outras mecânicas</button>
+            <span class="semente">semente <span id="semente"></span></span>
+          </p>
+        </section>
+
+        <section class="bloco">
+          <fieldset class="dificuldade">
+            <legend>dificuldade</legend>
+            <label><input type="radio" name="dificuldade" value="facil" checked> fácil</label>
+            <label><input type="radio" name="dificuldade" value="medio"> médio</label>
+          </fieldset>
+          <button type="submit" id="criar" class="botao-principal">CRIAR JOGO</button>
+        </section>
+      </form>
+
+      <div class="coluna-saida">
+        <div id="aviso" role="alert" hidden></div>
+        <p id="vazio" class="vazio">Seu jogo aparece aqui. Preencha o tema, escolha uma mecânica e clique em CRIAR JOGO.</p>
+        <div id="saida" hidden>
+          <section class="bloco">
+            <h2>saída 1: kit de regras (editável)</h2>
+            <div id="kit" class="kit"></div>
+            <div id="travas" class="travas" hidden></div>
+          </section>
+          <section class="bloco">
+            <h2>saída 2: folha A4 + rodada</h2>
+            <div id="cartas"></div>
+            <div class="rodada-e-acoes">
+              <div id="rodada" class="nota-amarela rodada"></div>
+              <div id="acoes" class="acoes"></div>
+            </div>
+            <p id="provocacao" class="provocacao"></p>
+          </section>
+        </div>
+        <section id="historico" class="historico" hidden></section>
+      </div>
+    </main>
+  </div>
+
+  <section id="impressao" aria-hidden="true"></section>
+
+  <dialog id="config">
+    <form method="dialog">
+      <h2>Configurar IA</h2>
+      <p>Para usar a IA você precisa de uma chave gratuita da OpenRouter:</p>
+      <ol>
+        <li>Crie uma conta em <a href="https://openrouter.ai" target="_blank" rel="noopener">openrouter.ai</a> (dá para entrar com Google ou GitHub).</li>
+        <li>Abra <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a> e clique em "Create API Key".</li>
+        <li>Cole a chave abaixo. Modelos terminados em ":free" não cobram nada.</li>
+      </ol>
+      <label class="campo">Chave da OpenRouter
+        <input id="chave" type="password" autocomplete="off" placeholder="sk-or-...">
+      </label>
+      <label class="campo">Modelo
+        <input id="modelo" type="text" autocomplete="off">
+      </label>
+      <p class="dica">A chave fica salva só neste navegador e é enviada apenas para a OpenRouter.</p>
+      <div class="linha">
+        <button value="salvar" id="salvar-config" class="botao-principal">Salvar</button>
+        <button value="fechar" class="botao-secundario">Fechar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
