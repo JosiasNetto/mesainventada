@@ -18,7 +18,7 @@ A ferramenta usa a chave da própria pessoa na OpenRouter, que tem modelos gratu
 2. Abra [openrouter.ai/keys](https://openrouter.ai/keys) e clique em "Create API Key".
 3. Na MesaInventada, clique em **⚙ Configurar IA** e cole a chave. Modelos terminados em `:free` não cobram nada.
 
-A chave fica salva só no seu navegador e é enviada apenas para a OpenRouter. O modelo padrão é `google/gemma-4-31b-it:free`. Se ele estiver fora do ar, use `openrouter/free` em ⚙ Configurar IA.
+A chave fica salva só no seu navegador e é enviada apenas para a OpenRouter. O modelo padrão é `nvidia/nemotron-3.5-super-vl:free`. Se o modelo escolhido estiver saturado ou fora do ar, a OpenRouter tenta sozinha as reservas gratuitas (`openrouter/free` e `google/gemma-4-31b-it:free`). Modelos grátis mudam com frequência: se algum sumir, troque em ⚙ Configurar IA ou em `src/ia.js`.
 
 ## Rodar localmente
 

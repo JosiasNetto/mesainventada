@@ -45,9 +45,26 @@ test('chamarLLM envia chave, modelo e semente e devolve o kit', async () => {
   assert.equal(pedido.url, 'https://openrouter.ai/api/v1/chat/completions');
   assert.equal(pedido.headers.Authorization, 'Bearer sk-or-x');
   const corpo = JSON.parse(pedido.body);
-  assert.equal(corpo.model, MODELO_PADRAO);
+  assert.equal(corpo.models[0], MODELO_PADRAO);
   assert.equal(corpo.seed, 42);
   assert.deepEqual(corpo.response_format, { type: 'json_object' });
+});
+
+test('chamarLLM manda modelos grátis de reserva para quando o escolhido estiver saturado', async () => {
+  let corpo;
+  globalThis.fetch = async (url, opts) => { corpo = JSON.parse(opts.body);
+    return { ok: true, status: 200, json: async () => ({ choices: [{ message: { content: JSON.stringify(kitExemplo) } }] }) }; };
+  await chamarLLM({ chave: 'x', modelo: 'google/gemma-4-31b-it:free', mensagens: [], semente: 1 });
+  assert.equal(corpo.models[0], 'google/gemma-4-31b-it:free');
+  assert.ok(corpo.models.includes('openrouter/free'));
+  assert.ok(corpo.models.length <= 3);
+  assert.equal(new Set(corpo.models).size, corpo.models.length);
+  assert.ok(corpo.models.every(m => m.endsWith(':free') || m === 'openrouter/free'));
+});
+
+test('aviso de erro traz o motivo dado pela OpenRouter', async () => {
+  globalThis.fetch = resposta({ error: { message: 'Model is temporarily rate-limited upstream' } }, false, 429);
+  await assert.rejects(chamarLLM({ chave: 'x', modelo: 'm', mensagens: [], semente: 1 }), /Espere.*rate-limited upstream/s);
 });
 
 test('chamarLLM transforma falhas em avisos legíveis', async () => {

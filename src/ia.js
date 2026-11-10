@@ -1,6 +1,9 @@
 // Onde a IA entra: prompts, chamada à OpenRouter (chave da própria pessoa) e avisos de falha.
 
-export const MODELO_PADRAO = 'google/gemma-4-31b-it:free';
+export const MODELO_PADRAO = 'nvidia/nemotron-3.5-super-vl:free';
+// Modelos grátis saturam ou somem sem aviso; a OpenRouter tenta estes, em ordem, se o escolhido falhar.
+// ponytail: lista fixa de 3 (limite seguro da API); revisar os ":free" disponíveis antes de cada entrega.
+const RESERVAS = ['openrouter/free', 'google/gemma-4-31b-it:free'];
 const URL_API = 'https://openrouter.ai/api/v1/chat/completions';
 const LIMITE_TURNO = { facil: 3, medio: 5 };
 
@@ -63,20 +66,22 @@ export function mensagemDeErro(status) {
 }
 
 export async function chamarLLM({ chave, modelo, mensagens, semente }) {
+  const models = [...new Set([modelo, MODELO_PADRAO, ...RESERVAS])].slice(0, 3);
   let res;
   try {
     res = await fetch(URL_API, {
       method: 'POST',
       headers: { Authorization: `Bearer ${chave}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: modelo, messages: mensagens, seed: semente, response_format: { type: 'json_object' } }),
+      body: JSON.stringify({ models, messages: mensagens, seed: semente, response_format: { type: 'json_object' } }),
       signal: AbortSignal.timeout(90_000),
     });
   } catch (e) {
     if (e?.name === 'TimeoutError') throw new Error('A IA demorou mais de 90 segundos. Tente de novo ou troque o modelo em ⚙ Configurar.');
     throw new Error('Sem conexão com a OpenRouter. Verifique a internet e tente de novo.');
   }
-  if (!res.ok) throw new Error(mensagemDeErro(res.status));
   const dados = await res.json().catch(() => ({}));
-  if (dados.error) throw new Error(mensagemDeErro(Number(dados.error.code) || 500));
+  const motivo = dados.error?.message ? ` (OpenRouter: ${dados.error.message})` : '';
+  if (!res.ok) throw new Error(mensagemDeErro(res.status) + motivo);
+  if (dados.error) throw new Error(mensagemDeErro(Number(dados.error.code) || 500) + motivo);
   return extrairJSON(dados.choices?.[0]?.message?.content);
 }
