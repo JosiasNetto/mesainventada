@@ -85,3 +85,10 @@ test('chaveValida aceita só a chave completa da OpenRouter', () => {
                       'sk-or-v1-' + 'a1'.repeat(16) + ' ' + 'a1'.repeat(16), 'sk-proj-' + 'a1'.repeat(32), 'minha chave'])
     assert.equal(chaveValida(ruim), false, ruim);
 });
+
+test('promptKit aceita até cinco mecânicas e pede para combinar todas', () => {
+  const cinco = catalogo.slice(0, 5);
+  const t = texto(promptKit(entradaExemplo, cinco));
+  assert.ok(t.includes('combine todas'));
+  for (const m of cinco) assert.ok(t.includes(m.nome), m.nome);
+});
