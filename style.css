@@ -53,7 +53,7 @@ h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 10px; }
 .bloco { margin-bottom: 28px; }
 .linha { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
 
-input[type=text], input[type=password], input[type=number], textarea {
+input[type=text], input[type=password], input[type=number], input[type=search], textarea {
   font: inherit; color: inherit; background: var(--branco);
   border: 2px solid var(--tinta); border-radius: 4px; padding: 8px 10px; width: 100%;
 }
@@ -184,7 +184,27 @@ dialog::backdrop { background: rgba(43, 43, 43, 0.45); }
 dialog ol { padding-left: 1.3em; }
 dialog a { color: var(--caneta-azul); }
 
-#catalogo { max-width: 920px; max-height: 90vh; overflow-y: auto; }
+#catalogo, #dialog-referencias { max-width: 920px; max-height: 90vh; overflow-y: auto; }
+.modos { display: flex; flex-wrap: wrap; gap: 8px; }
+.modo-opcao {
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  background: var(--branco); border: 2px solid var(--tinta); border-radius: 4px; padding: 6px 10px; font-size: 0.94rem;
+}
+.modo-opcao:has(input:checked) { background: var(--azul); font-weight: 700; box-shadow: 2px 2px 0 var(--tinta); }
+.painel-referencias {
+  margin-top: 12px; padding: 12px; background: rgba(255, 253, 248, 0.8);
+  border: 2px dashed rgba(43, 43, 43, 0.35); border-radius: 4px;
+}
+.painel-referencias .dica { margin: 0 0 10px; }
+.referencias-selecionadas { display: grid; gap: 10px; }
+.colar-regras { margin-top: 12px; }
+.colar-regras summary { cursor: pointer; font-weight: 700; color: var(--caneta-azul); font-size: 0.95rem; }
+.colar-regras input { margin: 8px 0; }
+.busca-referencias { margin-top: 14px; }
+.referencia-card { display: grid; gap: 6px; }
+.referencia-detalhes summary { cursor: pointer; font-size: 0.88rem; color: var(--caneta-azul); font-weight: 700; }
+.referencia-preview { margin: 6px 0 0; font-size: 0.88rem; color: var(--tinta); background: var(--papel); padding: 8px; border-radius: 4px; }
+.referencia-preview ul { margin: 4px 0 0; padding-left: 1.2em; }
 .topo-catalogo { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
 .topo-catalogo .dica { margin: 4px 0 0; }
 .catalogo-lista { margin: 18px 0; }
