@@ -2,8 +2,7 @@
 import { catalogo, mecanicaCompativel } from './src/mecanicas.js';
 import { materiaisExtras, combinarMateriais } from './src/materiais.js';
 import { normalizarJogadores, removerMecanicasIncompativeis, descreverFaixaJogadores } from './src/jogadores.js';
-import { buscarReferencias, referenciaDeVersao, referenciaDeTexto, mesclarCartasNoKit } from './src/referencias.js';
-import { MODELO_PADRAO, promptKit, promptComReferencias, promptRevisao, chamarLLM, chaveValida, AVISO_CHAVE } from './src/ia.js';
+import { MODELO_PADRAO, promptKit, promptRevisao, chamarLLM, chaveValida, AVISO_CHAVE } from './src/ia.js';
 import { validarKit } from './src/validador.js';
 
 const $ = sel => document.querySelector(sel);
@@ -24,38 +23,7 @@ function gravar(chave, valor) {
 
 const projeto = ler('mi:projeto', { sementeMecanicas: 1, atual: -1, versoes: [] });
 let selecionadas = [];
-let modoAtual = 'novo';
-let refsSelecionadas = [];
 const MAX_MECANICAS = 5;
-
-const MODOS_INFO = {
-  novo: {
-    rotuloTema: '1. Qual o tema?',
-    placeholder: 'jogo cooperativo sobre espaço... conte o clima, os personagens, o que você quer que aconteça na mesa. Quanto mais detalhes, melhor.',
-    botao: 'CRIAR JOGO',
-    dica: '',
-  },
-  'novas-cartas': {
-    rotuloTema: '1. Que cartas novas você quer criar?',
-    placeholder: 'ex.: 4 cartas de sabotagem para deixar o final mais tenso, ou cartas especiais temáticas...',
-    botao: 'GERAR NOVAS CARTAS',
-    dica: 'Escolha 1 jogo existente, versão anterior ou cole regras abaixo. As novas cartas serão somadas ao jogo.',
-  },
-  'novas-regras': {
-    rotuloTema: '1. O que mudar ou reinventar nas regras?',
-    placeholder: 'ex.: transformar em modo cooperativo contra o relógio, ou adaptar para 2 pessoas...',
-    botao: 'CRIAR VARIAÇÃO',
-    dica: 'Escolha 1 jogo existente, versão anterior ou cole regras abaixo para adaptar suas regras.',
-  },
-  inspirado: {
-    rotuloTema: '1. Qual o tema do novo jogo?',
-    placeholder: 'ex.: entrega espacial caótica reaproveitando a aposta do Truco ou regras de uma versão anterior...',
-    botao: 'CRIAR JOGO INSPIRADO',
-    dica: 'Escolha até 2 jogos existentes, versões passadas ou cole regras para servir de inspiração estrutural.',
-  },
-};
-
-const maxReferencias = () => (modoAtual === 'inspirado' ? 2 : 1);
 
 const FAMILIAS = {
   'cooperativo': 'Cooperativo',
@@ -233,179 +201,6 @@ $('#jogadores').addEventListener('blur', sincronizarJogadores);
 document.querySelectorAll('input[name=material]').forEach(i => i.addEventListener('change', atualizarEntradaMecanicas));
 $('#outro-material').addEventListener('change', atualizarEntradaMecanicas);
 
-// ---- modo de criação e referências -------------------------------------------
-
-function mostrarAvisoReferencias(msg) {
-  $('#referencias-aviso').textContent = msg;
-  $('#referencias-aviso').hidden = !msg;
-}
-
-function sugerirMecanicasDaReferencia(ref) {
-  if (selecionadas.length || !ref?.mecanicasIds?.length) return;
-  const entrada = lerFormulario();
-  for (const id of ref.mecanicasIds) {
-    const mec = catalogo.find(m => m.id === id);
-    if (mec && mecanicaCompativel(mec, entrada) && selecionadas.length < MAX_MECANICAS) {
-      selecionadas.push(mec);
-    }
-  }
-  renderMecanicas();
-}
-
-function removerReferencia(id) {
-  refsSelecionadas = refsSelecionadas.filter(r => r.id !== id);
-  mostrarAvisoReferencias('');
-  renderReferenciasSelecionadas();
-  if ($('#dialog-referencias').open) renderModalReferencias();
-}
-
-function alternarReferencia(ref) {
-  if (refsSelecionadas.some(r => r.id === ref.id)) return;
-  const max = maxReferencias();
-  if (max === 1) {
-    refsSelecionadas = [ref];
-  } else if (refsSelecionadas.length < max) {
-    refsSelecionadas.push(ref);
-  } else {
-    mostrarAvisoReferencias(`Neste modo você pode escolher até ${max} referências. Remova uma pelo X para trocar.`);
-    return;
-  }
-  mostrarAvisoReferencias('');
-  sugerirMecanicasDaReferencia(ref);
-  renderReferenciasSelecionadas();
-  if ($('#dialog-referencias').open) renderModalReferencias();
-}
-
-function renderReferenciasSelecionadas() {
-  const max = maxReferencias();
-  const txtContador = refsSelecionadas.length
-    ? `${refsSelecionadas.length} de ${max} selecionada(s)`
-    : 'nenhuma base selecionada';
-  $('#contador-referencias').textContent = txtContador;
-  $('#referencias-contador').textContent = txtContador;
-
-  if (!refsSelecionadas.length) {
-    $('#referencias-selecionadas').replaceChildren();
-    return;
-  }
-  $('#referencias-selecionadas').replaceChildren(...refsSelecionadas.map(ref => {
-    const d = el('div', null, 'mecanica mecanica-selecionada');
-    const info = ref.origem === 'versao'
-      ? 'Versão desta sessão'
-      : `${descreverFaixaJogadores(ref.minJogadores, ref.maxJogadores)} · ${(ref.kit?.cartas || []).length} tipos de carta`;
-    d.append(el('strong', ref.nome), el('span', info));
-    const x = el('button', '✕', 'mecanica-remover-x');
-    x.type = 'button';
-    x.setAttribute('aria-label', `Remover a referência ${ref.nome}`);
-    x.title = 'Remover';
-    x.addEventListener('click', () => removerReferencia(ref.id));
-    d.append(x);
-    return d;
-  }));
-}
-
-function criarCardReferencia(ref) {
-  const escolhida = refsSelecionadas.some(r => r.id === ref.id);
-  const card = el('div', null, 'referencia-card');
-  const slot = el('div', null, 'mecanica-slot');
-  const b = el('button', null, 'mecanica');
-  b.type = 'button';
-  b.setAttribute('aria-pressed', String(escolhida));
-  const nomesMecs = (ref.mecanicasIds || [])
-    .map(id => catalogo.find(m => m.id === id)?.nome || id)
-    .join(' + ');
-  const meta = `${descreverFaixaJogadores(ref.minJogadores, ref.maxJogadores)}${nomesMecs ? ` · ${nomesMecs}` : ''}`;
-  b.append(el('strong', ref.nome), el('span', ref.resumo), el('span', meta, 'semente'));
-  if (!escolhida) b.addEventListener('click', () => alternarReferencia(ref));
-  slot.append(b);
-  if (escolhida) {
-    const x = el('button', '✕', 'mecanica-remover-x');
-    x.type = 'button';
-    x.setAttribute('aria-label', `Remover a referência ${ref.nome}`);
-    x.title = 'Remover';
-    x.addEventListener('click', () => removerReferencia(ref.id));
-    slot.append(x);
-  }
-  card.append(slot);
-
-  if (ref.kit) {
-    const detalhes = el('details', null, 'referencia-detalhes');
-    detalhes.append(el('summary', `Ver regras e ${(ref.kit.cartas || []).length} tipos de carta`));
-    const prev = el('div', null, 'referencia-preview');
-    prev.append(el('p', `Objetivo: ${ref.kit.objetivo || ''}`));
-    if (Array.isArray(ref.kit.turno) && ref.kit.turno.length) {
-      prev.append(el('p', `Turno: ${ref.kit.turno.join(' → ')}`));
-    }
-    const ul = el('ul');
-    (ref.kit.cartas || []).forEach(c => {
-      ul.append(el('li', `${c.nome} (×${c.quantidade || 1}): ${c.texto}`));
-    });
-    prev.append(ul);
-    detalhes.append(prev);
-    card.append(detalhes);
-  }
-  return card;
-}
-
-function renderModalReferencias() {
-  const termo = ($('#busca-referencias').value || '').trim().toLowerCase();
-  const secoes = [];
-
-  const versoesRefs = projeto.versoes
-    .map(referenciaDeVersao)
-    .filter(Boolean)
-    .reverse()
-    .filter(r => !termo || r.nome.toLowerCase().includes(termo) || r.resumo.toLowerCase().includes(termo));
-
-  if (versoesRefs.length) {
-    const sec = el('section', null, 'catalogo-familia');
-    sec.append(el('h3', 'Versões criadas nesta sessão'));
-    const grade = el('div', null, 'mecanicas');
-    versoesRefs.forEach(r => grade.append(criarCardReferencia(r)));
-    sec.append(grade);
-    secoes.push(sec);
-  }
-
-  const jogos = buscarReferencias(termo);
-  const secJogos = el('section', null, 'catalogo-familia');
-  secJogos.append(el('h3', 'Jogos existentes mapeados'));
-  const gradeJogos = el('div', null, 'mecanicas');
-  if (jogos.length) jogos.forEach(r => gradeJogos.append(criarCardReferencia(r)));
-  else gradeJogos.append(el('p', 'Nenhum jogo encontrado para essa busca.', 'vazio-mecanicas'));
-  secJogos.append(gradeJogos);
-  secoes.push(secJogos);
-
-  $('#referencias-lista').replaceChildren(...secoes);
-  renderReferenciasSelecionadas();
-}
-
-function atualizarModo() {
-  modoAtual = document.querySelector('input[name=modo]:checked')?.value || 'novo';
-  const info = MODOS_INFO[modoAtual] || MODOS_INFO.novo;
-  if (refsSelecionadas.length > maxReferencias()) {
-    refsSelecionadas = refsSelecionadas.slice(0, maxReferencias());
-  }
-  $('#painel-referencias').hidden = modoAtual === 'novo';
-  $('#label-tema').textContent = info.rotuloTema;
-  $('#tema').placeholder = info.placeholder;
-  $('#dica-modo').textContent = info.dica;
-  if (!carregando) $('#criar').textContent = info.botao;
-  renderReferenciasSelecionadas();
-}
-
-document.querySelectorAll('input[name=modo]').forEach(r => r.addEventListener('change', atualizarModo));
-$('#abrir-referencias').addEventListener('click', () => {
-  mostrarAvisoReferencias('');
-  renderModalReferencias();
-  $('#dialog-referencias').showModal();
-});
-$('#busca-referencias').addEventListener('input', renderModalReferencias);
-$('#fechar-referencias').addEventListener('click', () => $('#dialog-referencias').close());
-$('#referencias-pronto').addEventListener('click', () => $('#dialog-referencias').close());
-$('#dialog-referencias').addEventListener('click', e => {
-  if (e.target === $('#dialog-referencias')) $('#dialog-referencias').close();
-});
-
 function mostrarErroChave(msg) {
   $('#erro-chave').textContent = msg;
   $('#erro-chave').hidden = !msg;
@@ -460,21 +255,8 @@ async function gerar(mensagens, extras, botao = $('#criar')) {
   const relogio = setInterval(tique, 1000);
   try {
     const semente = Math.floor(Math.random() * 1e6);
-    let kit = await chamarLLM({ chave: ler('mi:chave', ''), modelo: ler('mi:modelo', MODELO_PADRAO), mensagens, semente });
-    const metaExtras = { ...extras };
-    if (metaExtras.modo === 'novas-cartas') {
-      if (metaExtras.kitBase) {
-        kit = mesclarCartasNoKit(metaExtras.kitBase, kit);
-      } else {
-        kit = {
-          titulo: kit.titulo || `${metaExtras.referenciasNomes?.[0] || 'Jogo'} — Novas cartas`,
-          ...kit,
-        };
-        metaExtras.apenasCartasNovas = !(kit.objetivo && Array.isArray(kit.preparacao) && kit.preparacao.length && Array.isArray(kit.turno) && kit.turno.length);
-      }
-    }
-    delete metaExtras.kitBase;
-    adicionarVersao({ ...metaExtras, semente, kit });
+    const kit = await chamarLLM({ chave: ler('mi:chave', ''), modelo: ler('mi:modelo', MODELO_PADRAO), mensagens, semente });
+    adicionarVersao({ ...extras, semente, kit });
     mostrarAviso('');
     render();
   } catch (e) {
@@ -490,32 +272,10 @@ async function gerar(mensagens, extras, botao = $('#criar')) {
 $('#formulario').addEventListener('submit', e => {
   e.preventDefault();
   const entrada = lerFormulario();
-  if (!entrada.tema) { mostrarAviso('Escreva um tema ou pedido para a IA (ou clique no exemplo).'); $('#tema').focus(); return; }
-  if (modoAtual === 'novo') {
-    if (!selecionadas.length) { mostrarAviso('Escolha uma mecânica (ou até cinco para combinar).'); return; }
-    if (!chaveOuConfig()) return;
-    gerar(promptKit(entrada, selecionadas), { origem: 'gerado', modo: 'novo', entrada, mecanicas: [...selecionadas] });
-    return;
-  }
-
-  const colada = referenciaDeTexto($('#ref-titulo-livre').value, $('#ref-texto-livre').value);
-  const refsParaEnvio = [...refsSelecionadas, ...(colada ? [colada] : [])];
-  if (!refsParaEnvio.length) {
-    mostrarAviso('Escolha um jogo existente/versão passada ou cole regras no campo de referência.');
-    return;
-  }
+  if (!entrada.tema) { mostrarAviso('Escreva um tema para o jogo (ou clique no exemplo).'); $('#tema').focus(); return; }
+  if (!selecionadas.length) { mostrarAviso('Escolha uma mecânica (ou até cinco para combinar).'); return; }
   if (!chaveOuConfig()) return;
-  gerar(
-    promptComReferencias(entrada, selecionadas, { modo: modoAtual, referencias: refsParaEnvio }),
-    {
-      origem: 'gerado',
-      modo: modoAtual,
-      entrada,
-      mecanicas: [...selecionadas],
-      referenciasNomes: refsParaEnvio.map(r => r.nome),
-      kitBase: modoAtual === 'novas-cartas' ? (refsParaEnvio[0].kit || null) : null,
-    },
-  );
+  gerar(promptKit(entrada, selecionadas), { origem: 'gerado', entrada, mecanicas: [...selecionadas] });
 });
 
 // ---- desenho do kit -----------------------------------------------------------
@@ -589,7 +349,7 @@ function renderKit(kit, alvo, editavel) {
 
 function renderTravas() {
   const v = versaoAtual();
-  const avisos = v ? validarKit(v.kit, v.entrada, v.mecanicas, { apenasCartasNovas: Boolean(v.apenasCartasNovas) }) : [];
+  const avisos = v ? validarKit(v.kit, v.entrada, v.mecanicas) : [];
   const ul = el('ul');
   avisos.forEach(a => ul.append(el('li', a)));
   const corrigir = el('button', 'Pedir à IA para corrigir', 'botao-secundario');
@@ -605,9 +365,8 @@ function renderTravas() {
 async function revisar(relato, botao) {
   const v = versaoAtual();
   if (!v || !chaveOuConfig()) return;
-  const avisos = validarKit(v.kit, v.entrada, v.mecanicas, { apenasCartasNovas: Boolean(v.apenasCartasNovas) });
-  await gerar(promptRevisao(v.entrada, v.kit, relato, avisos),
-    { origem: 'revisado', modo: 'novo', entrada: v.entrada, mecanicas: v.mecanicas, relato }, botao);
+  await gerar(promptRevisao(v.entrada, v.kit, relato, validarKit(v.kit, v.entrada, v.mecanicas)),
+    { origem: 'revisado', entrada: v.entrada, mecanicas: v.mecanicas, relato }, botao);
   if (versaoAtual() !== v) { $('#relato').value = ''; $('#relato-box').hidden = true; }
 }
 
@@ -627,9 +386,8 @@ function renderHistorico() {
   projeto.versoes.forEach((v, i) => {
     const li = el('li', null, i === projeto.atual ? 'atual' : '');
     const hora = new Date(v.criadaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    const tagModo = v.modo && v.modo !== 'novo' ? ` · ${v.modo}` : '';
-    const rotulo = el('span', `v${v.n} · ${v.origem}${tagModo} · ${hora}`, 'rotulo-versao');
-    rotulo.title = `semente ${v.semente}${v.referenciasNomes?.length ? ` · base: ${v.referenciasNomes.join(', ')}` : ''}${v.relato ? ` · relato: ${v.relato}` : ''}`;
+    const rotulo = el('span', `v${v.n} · ${v.origem} · ${hora}`, 'rotulo-versao');
+    rotulo.title = `semente ${v.semente}${v.relato ? ` · relato: ${v.relato}` : ''}`;
     li.append(rotulo);
     if (i === projeto.atual) li.append(el('span', 'aberta', 'marca-atual'));
     else {
@@ -749,6 +507,5 @@ $('#kit').addEventListener('click', e => {
 });
 
 ajustarTema();
-atualizarModo();
 renderMecanicas();
 render();

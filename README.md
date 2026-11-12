@@ -47,7 +47,7 @@ npm test   # Node 22+, sem dependências
 
 | Diagrama (caixa transparente) | Código |
 |---|---|
-| Formulário | `index.html` + `app.js` + `src/jogadores.js` |
+| Formulário | `index.html` + `app.js` |
 | Módulo A: motor de mecânicas + catálogo de mecânicas | `src/mecanicas.js` |
 | Catálogo de jogos existentes e regras passadas | `src/jogos-referencia.json` + `src/referencias.js` |
 | API externa LLM: regras, cartas e rodada | `src/ia.js` |
@@ -68,4 +68,3 @@ npm test   # Node 22+, sem dependências
 - **Dificuldade limita o turno.** "fácil" permite no máximo 3 passos no turno, e "médio" permite no máximo 5.
 - **Chave da própria pessoa (BYOK).** Não há chave do grupo embutida, e a tela explica como obter uma chave gratuita.
 - **Jogadores de 1 a 8.** O formulário, o filtro de mecânicas, o prompt e as travas tratam desde modo solo (1 pessoa) até mesas maiores (8 pessoas), avisando quando alguma mecânica deixa de ser compatível.
-- **Jogos existentes e regras passadas.** Além de criar do zero, a pessoa pode partir de jogos mapeados (`src/referencias.js`), versões anteriores da sessão ou regras coladas para gerar novas cartas, variações de regras ou novos jogos inspirados.

@@ -24,42 +24,19 @@
     <details class="ajuda" open>
       <summary>Como usar</summary>
       <ol>
-        <li>Escolha o ponto de partida: criar do zero, gerar novas cartas/regras para um jogo existente ou criar um jogo novo inspirado em regras passadas.</li>
-        <li>Descreva o tema (ou as cartas/mudanças que deseja) e ajuste de 1 a 8 jogadores, duração e materiais.</li>
-        <li>Abra o catálogo de mecânicas para escolher ou combinar até cinco mecânicas compatíveis.</li>
+        <li>Descreva o tema com o nível de detalhe que quiser e diga quem vai jogar (ou clique no exemplo).</li>
+        <li>Abra o catálogo completo, veja todas as mecânicas e escolha de uma a cinco para combinar.</li>
+        <li>Marque os materiais que você tem e escreva outros no campo "outros materiais".</li>
         <li>Clique em CRIAR JOGO. A IA escreve regras, cartas e uma rodada de teste, e tudo fica editável.</li>
         <li>Jogue com papel, relate o que deu errado e peça uma revisão. Baixe o PDF para imprimir.</li>
       </ol>
-      <p><strong>Onde a IA entra:</strong> os catálogos de mecânicas e jogos de referência são fixos, sem IA, e você também pode reaproveitar versões anteriores ou colar regras passadas. A IA (um modelo de linguagem via OpenRouter) cria ou adapta regras, cartas novas, rodada de teste e provocação, e reescreve o kit a partir do seu relato. As travas, também sem IA, conferem limites de turno, cartas, materiais e quantidade de jogadores. A última palavra é sua: dá para editar, apagar ou voltar a qualquer versão.</p>
+      <p><strong>Onde a IA entra:</strong> o catálogo de mecânicas é fixo, sem IA, e você escolhe nele as que quer usar. A IA (um modelo de linguagem via OpenRouter) decide as regras, o texto das cartas, a rodada de teste e a provocação, e reescreve o kit a partir do seu relato. As travas, também sem IA, avisam quando o resultado foge dos limites. A última palavra é sua: dá para editar, apagar ou voltar a qualquer versão.</p>
     </details>
 
     <main class="colunas">
       <form id="formulario" class="coluna-entrada" novalidate>
         <section class="bloco">
-          <h2>Ponto de partida</h2>
-          <div class="modos" role="radiogroup" aria-label="Ponto de partida">
-            <label class="modo-opcao"><input type="radio" name="modo" value="novo" checked> Criar do zero</label>
-            <label class="modo-opcao"><input type="radio" name="modo" value="novas-cartas"> Novas cartas</label>
-            <label class="modo-opcao"><input type="radio" name="modo" value="novas-regras"> Novas regras</label>
-            <label class="modo-opcao"><input type="radio" name="modo" value="inspirado"> Baseado em regras passadas</label>
-          </div>
-          <div id="painel-referencias" class="painel-referencias" hidden>
-            <p id="dica-modo" class="dica"></p>
-            <div id="referencias-selecionadas" class="referencias-selecionadas"></div>
-            <p class="linha-semente">
-              <button type="button" id="abrir-referencias" class="botao-texto">▦ escolher jogo existente ou versão passada</button>
-              <span id="contador-referencias" class="semente">nenhuma base selecionada</span>
-            </p>
-            <details class="colar-regras">
-              <summary>Ou cole regras e cartas passadas manualmente</summary>
-              <input id="ref-titulo-livre" type="text" placeholder="Nome do jogo ou regra passada (opcional)" autocomplete="off">
-              <textarea id="ref-texto-livre" rows="3" placeholder="Cole aqui as regras ou cartas de um jogo existente ou de uma criação passada..."></textarea>
-            </details>
-          </div>
-        </section>
-
-        <section class="bloco">
-          <h2><label id="label-tema" for="tema">1. Qual o tema?</label></h2>
+          <h2><label for="tema">1. Qual o tema?</label></h2>
           <textarea id="tema" rows="5" required placeholder="jogo cooperativo sobre espaço... conte o clima, os personagens, o que você quer que aconteça na mesa. Quanto mais detalhes, melhor." autocomplete="off"></textarea>
           <p class="dica">Escreva à vontade: a caixa cresce conforme você digita.</p>
         </section>
@@ -141,23 +118,6 @@
     <div class="rodape-catalogo">
       <span id="catalogo-contador" class="semente">nenhuma selecionada</span>
       <button type="button" id="catalogo-pronto" class="botao-principal">Usar selecionadas</button>
-    </div>
-  </dialog>
-
-  <dialog id="dialog-referencias">
-    <div class="topo-catalogo">
-      <div>
-        <h2>Jogos existentes e versões passadas</h2>
-        <p class="dica">Escolha um jogo mapeado (com regras e arquétipos de cartas) ou uma versão criada antes.</p>
-      </div>
-      <button type="button" id="fechar-referencias" class="botao-secundario">Fechar</button>
-    </div>
-    <input id="busca-referencias" class="busca-referencias" type="search" placeholder="Buscar por nome, resumo ou mecânica..." autocomplete="off">
-    <p id="referencias-aviso" class="catalogo-aviso" role="status" hidden></p>
-    <div id="referencias-lista" class="catalogo-lista"></div>
-    <div class="rodape-catalogo">
-      <span id="referencias-contador" class="semente">nenhuma base selecionada</span>
-      <button type="button" id="referencias-pronto" class="botao-principal">Usar selecionada</button>
     </div>
   </dialog>
 
