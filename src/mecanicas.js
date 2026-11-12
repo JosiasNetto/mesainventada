@@ -42,10 +42,18 @@ function mulberry32(a) {
   };
 }
 
-export function escolherMecanicas(entrada, semente) {
+export function mecanicaCompativel(mecanica, entrada) {
   const { jogadores, materiais } = entrada;
-  const possiveis = catalogo.filter(x =>
-    x.precisa.every(p => materiais.includes(p)) && x.minJogadores <= jogadores && jogadores <= x.maxJogadores);
+  return mecanica.precisa.every(p => materiais.includes(p))
+    && mecanica.minJogadores <= jogadores && jogadores <= mecanica.maxJogadores;
+}
+
+export function mecanicasCompativeis(entrada) {
+  return catalogo.filter(m => mecanicaCompativel(m, entrada));
+}
+
+export function escolherMecanicas(entrada, semente) {
+  const possiveis = mecanicasCompativeis(entrada);
   const rnd = mulberry32(semente);
   for (let i = possiveis.length - 1; i > 0; i--) {
     const j = Math.floor(rnd() * (i + 1));

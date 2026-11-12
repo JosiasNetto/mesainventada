@@ -30,7 +30,7 @@ Regras:
 export function promptKit(entrada, mecanicas) {
   const { tema, jogadores, duracao, materiais, dificuldade } = entrada;
   const cabecalho = mecanicas.length > 1
-    ? 'Mecânicas escolhidas (combine as duas num só jogo):'
+    ? 'Mecânicas escolhidas (combine todas num só jogo):'
     : 'Mecânica escolhida (construa o jogo em torno dela):';
   const user = [
     `Tema: ${tema}`,

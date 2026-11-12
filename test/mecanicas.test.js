@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { catalogo, escolherMecanicas } from '../src/mecanicas.js';
+import { catalogo, escolherMecanicas, mecanicaCompativel, mecanicasCompativeis } from '../src/mecanicas.js';
 
 const entrada = { tema: 'espaço', jogadores: 4, duracao: 20, materiais: ['papel', 'caneta', 'dado'], dificuldade: 'facil' };
 
@@ -30,4 +30,22 @@ test('respeita materiais e número de jogadores', () => {
     assert.deepEqual(m.precisa, []);
     assert.ok(m.minJogadores <= 2 && 2 <= m.maxJogadores);
   }
+});
+
+test('mecanicaCompativel confere materiais e número de jogadores', () => {
+  const leilao = catalogo.find(m => m.id === 'leilao');
+  const forcarSorte = catalogo.find(m => m.id === 'forcar-sorte');
+  assert.equal(mecanicaCompativel(leilao, { jogadores: 4, materiais: ['papel', 'caneta'] }), true);
+  assert.equal(mecanicaCompativel(leilao, { jogadores: 4, materiais: ['papel'] }), false);
+  assert.equal(mecanicaCompativel(forcarSorte, { jogadores: 4, materiais: ['papel', 'dado'] }), true);
+  assert.equal(mecanicaCompativel(forcarSorte, { jogadores: 4, materiais: ['papel'] }), false);
+  assert.equal(mecanicaCompativel(forcarSorte, { jogadores: 1, materiais: ['papel', 'dado'] }), false);
+});
+
+test('mecanicasCompativeis devolve o catálogo inteiro quando tudo serve', () => {
+  const todas = mecanicasCompativeis(entrada);
+  assert.equal(todas.length, catalogo.length);
+  const semDado = mecanicasCompativeis({ ...entrada, materiais: ['papel', 'caneta'] });
+  assert.ok(semDado.length < catalogo.length);
+  assert.ok(semDado.every(m => !m.precisa.includes('dado')));
 });

@@ -24,19 +24,21 @@
     <details class="ajuda" open>
       <summary>Como usar</summary>
       <ol>
-        <li>Descreva o tema e quem vai jogar (ou clique no exemplo).</li>
-        <li>Escolha uma mecânica, ou duas para combinar. "↻ outras mecânicas" sorteia novas.</li>
+        <li>Descreva o tema com o nível de detalhe que quiser e diga quem vai jogar (ou clique no exemplo).</li>
+        <li>Abra o catálogo completo, veja todas as mecânicas e escolha de uma a cinco para combinar.</li>
+        <li>Marque os materiais que você tem e escreva outros no campo "outros materiais".</li>
         <li>Clique em CRIAR JOGO. A IA escreve regras, cartas e uma rodada de teste, e tudo fica editável.</li>
         <li>Jogue com papel, relate o que deu errado e peça uma revisão. Baixe o PDF para imprimir.</li>
       </ol>
-      <p><strong>Onde a IA entra:</strong> as mecânicas oferecidas vêm de um catálogo fixo, sem IA. A IA (um modelo de linguagem via OpenRouter) decide as regras, o texto das cartas, a rodada de teste e a provocação, e reescreve o kit a partir do seu relato. As travas, também sem IA, avisam quando o resultado foge dos limites. A última palavra é sua: dá para editar, apagar ou voltar a qualquer versão.</p>
+      <p><strong>Onde a IA entra:</strong> o catálogo de mecânicas é fixo, sem IA, e você escolhe nele as que quer usar. A IA (um modelo de linguagem via OpenRouter) decide as regras, o texto das cartas, a rodada de teste e a provocação, e reescreve o kit a partir do seu relato. As travas, também sem IA, avisam quando o resultado foge dos limites. A última palavra é sua: dá para editar, apagar ou voltar a qualquer versão.</p>
     </details>
 
     <main class="colunas">
       <form id="formulario" class="coluna-entrada" novalidate>
         <section class="bloco">
           <h2><label for="tema">1. Qual o tema?</label></h2>
-          <input id="tema" type="text" required maxlength="200" placeholder="jogo cooperativo sobre espaço..." autocomplete="off">
+          <textarea id="tema" rows="5" required placeholder="jogo cooperativo sobre espaço... conte o clima, os personagens, o que você quer que aconteça na mesa. Quanto mais detalhes, melhor." autocomplete="off"></textarea>
+          <p class="dica">Escreva à vontade: a caixa cresce conforme você digita.</p>
         </section>
 
         <section class="bloco">
@@ -50,17 +52,20 @@
             <label><input type="checkbox" name="material" value="papel" checked disabled> papel</label>
             <label><input type="checkbox" name="material" value="caneta" checked> caneta</label>
             <label><input type="checkbox" name="material" value="dado" checked> dado</label>
+            <label class="material-outro">outros materiais
+              <input id="outro-material" type="text" placeholder="separe por vírgula: moedas, barbante, tampinhas" autocomplete="off">
+            </label>
           </fieldset>
           <button type="button" id="exemplo" class="nota-amarela">exemplo: "cooperativo no espaço, 4 pessoas, 20 min"</button>
         </section>
 
         <section class="bloco">
           <h2>3. Escolha a mecânica</h2>
-          <p class="dica">Escolha 1, ou 2 para combinar.</p>
+          <p class="dica">Veja o catálogo completo e escolha de 1 a 5 para combinar.</p>
           <div id="mecanicas" class="mecanicas"></div>
           <p class="linha-semente">
-            <button type="button" id="outras" class="botao-texto">↻ outras mecânicas</button>
-            <span class="semente">semente <span id="semente"></span></span>
+            <button type="button" id="abrir-catalogo" class="botao-texto">▦ ver catálogo completo</button>
+            <span id="contador-mecanicas" class="semente">nenhuma selecionada</span>
           </p>
         </section>
 
@@ -99,6 +104,22 @@
   </div>
 
   <section id="impressao" aria-hidden="true"></section>
+
+  <dialog id="catalogo">
+    <div class="topo-catalogo">
+      <div>
+        <h2>Catálogo de mecânicas</h2>
+        <p class="dica">Todas as mecânicas disponíveis, organizadas por família. Escolha até 5 para combinar.</p>
+      </div>
+      <button type="button" id="fechar-catalogo" class="botao-secundario">Fechar</button>
+    </div>
+    <p id="catalogo-aviso" class="catalogo-aviso" role="status" hidden></p>
+    <div id="catalogo-lista" class="catalogo-lista"></div>
+    <div class="rodape-catalogo">
+      <span id="catalogo-contador" class="semente">nenhuma selecionada</span>
+      <button type="button" id="catalogo-pronto" class="botao-principal">Usar selecionadas</button>
+    </div>
+  </dialog>
 
   <dialog id="config">
     <form method="dialog">

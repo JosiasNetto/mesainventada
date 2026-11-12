@@ -1,5 +1,6 @@
 // Cola da tela única: estado, eventos e desenho. A lógica testável mora em src/.
-import { escolherMecanicas } from './src/mecanicas.js';
+import { catalogo, mecanicaCompativel } from './src/mecanicas.js';
+import { materiaisExtras, combinarMateriais } from './src/materiais.js';
 import { MODELO_PADRAO, promptKit, promptRevisao, chamarLLM, chaveValida, AVISO_CHAVE } from './src/ia.js';
 import { validarKit } from './src/validador.js';
 
@@ -21,57 +22,164 @@ function gravar(chave, valor) {
 
 const projeto = ler('mi:projeto', { sementeMecanicas: 1, atual: -1, versoes: [] });
 let selecionadas = [];
+const MAX_MECANICAS = 5;
+
+const FAMILIAS = {
+  'cooperativo': 'Cooperativo',
+  'competitivo': 'Competitivo',
+  'informacao-oculta': 'Informação oculta',
+  'negociacao': 'Negociação',
+  'sorte': 'Sorte',
+};
 
 function lerFormulario() {
   const n = Number($('#jogadores').value) || 4;
+  const fixos = [...document.querySelectorAll('input[name=material]:checked')].map(i => i.value);
+  const extras = materiaisExtras($('#outro-material').value);
   return {
     tema: $('#tema').value.trim(),
     jogadores: Math.min(8, Math.max(2, n)),
     duracao: Number($('#duracao').value) || 20,
-    materiais: [...document.querySelectorAll('input[name=material]:checked')].map(i => i.value),
+    materiais: combinarMateriais(fixos, extras),
     dificuldade: document.querySelector('input[name=dificuldade]:checked')?.value || 'facil',
   };
 }
 
+function ajustarTema() {
+  const t = $('#tema');
+  t.style.height = 'auto';
+  t.style.height = `${Math.min(t.scrollHeight, 420)}px`;
+}
+
+function motivoIncompativel(m) {
+  const { jogadores, materiais } = lerFormulario();
+  const faltam = m.precisa.filter(p => !materiais.includes(p));
+  if (faltam.length) return `precisa de ${faltam.join(' e ')}`;
+  if (jogadores < m.minJogadores || jogadores > m.maxJogadores)
+    return `para ${m.minJogadores} a ${m.maxJogadores} jogadores`;
+  return '';
+}
+
 function renderMecanicas() {
-  const oferecidas = escolherMecanicas(lerFormulario(), projeto.sementeMecanicas);
-  selecionadas = selecionadas.filter(s => oferecidas.some(o => o.id === s.id));
-  $('#mecanicas').replaceChildren(...oferecidas.map(m => {
-    const b = el('button', null, 'mecanica');
-    b.type = 'button';
-    b.setAttribute('aria-pressed', String(selecionadas.some(s => s.id === m.id)));
-    b.append(el('strong', m.nome), el('span', m.descricao));
-    b.addEventListener('click', () => alternarMecanica(m));
-    return b;
+  const contador = selecionadas.length ? `${selecionadas.length} de ${MAX_MECANICAS} selecionadas` : 'nenhuma selecionada';
+  $('#contador-mecanicas').textContent = contador;
+  if (!selecionadas.length) {
+    $('#mecanicas').replaceChildren(el('p', 'Nenhuma mecânica escolhida ainda. Abra o catálogo completo para ver todas as opções.', 'vazio-mecanicas'));
+    return;
+  }
+  $('#mecanicas').replaceChildren(...selecionadas.map(m => {
+    const d = el('div', null, 'mecanica mecanica-selecionada');
+    d.append(el('strong', m.nome), el('span', m.descricao));
+    const x = el('button', '✕', 'mecanica-remover-x');
+    x.type = 'button';
+    x.setAttribute('aria-label', `Remover a mecânica ${m.nome}`);
+    x.title = 'Remover';
+    x.addEventListener('click', () => removerMecanica(m));
+    d.append(x);
+    return d;
   }));
-  $('#semente').textContent = projeto.sementeMecanicas;
+}
+
+function mostrarAvisoCatalogo(msg) {
+  $('#catalogo-aviso').textContent = msg;
+  $('#catalogo-aviso').hidden = !msg;
+}
+
+function renderCatalogo() {
+  const entrada = lerFormulario();
+  const familias = [...new Set(catalogo.map(m => m.familia))];
+  const blocos = familias.map(fam => {
+    const secao = el('section', null, 'catalogo-familia');
+    secao.append(el('h3', FAMILIAS[fam] || fam));
+    const grade = el('div', null, 'mecanicas');
+    catalogo.filter(m => m.familia === fam).forEach(m => {
+      const compativel = mecanicaCompativel(m, entrada);
+      const escolhida = selecionadas.some(s => s.id === m.id);
+      const slot = el('div', null, 'mecanica-slot');
+      const b = el('button', null, 'mecanica');
+      b.type = 'button';
+      b.setAttribute('aria-pressed', String(escolhida));
+      b.disabled = !compativel && !escolhida;
+      b.append(el('strong', m.nome), el('span', m.descricao));
+      if (!compativel) b.append(el('span', `indisponível: ${motivoIncompativel(m)}`, 'mecanica-motivo'));
+      if (!escolhida) b.addEventListener('click', () => alternarMecanica(m));
+      slot.append(b);
+      if (escolhida) {
+        const x = el('button', '✕', 'mecanica-remover-x');
+        x.type = 'button';
+        x.setAttribute('aria-label', `Remover a mecânica ${m.nome}`);
+        x.title = 'Remover';
+        x.addEventListener('click', () => removerMecanica(m));
+        slot.append(x);
+      }
+      grade.append(slot);
+    });
+    secao.append(grade);
+    return secao;
+  });
+  $('#catalogo-lista').replaceChildren(...blocos);
+  const contador = selecionadas.length ? `${selecionadas.length} de ${MAX_MECANICAS} selecionadas` : 'nenhuma selecionada';
+  $('#catalogo-contador').textContent = contador;
+}
+
+function removerMecanica(m) {
+  selecionadas = selecionadas.filter(s => s.id !== m.id);
+  mostrarAvisoCatalogo('');
+  renderMecanicas();
+  if ($('#catalogo').open) renderCatalogo();
 }
 
 function alternarMecanica(m) {
-  const i = selecionadas.findIndex(s => s.id === m.id);
-  if (i >= 0) selecionadas.splice(i, 1);
-  else if (selecionadas.length < 2) selecionadas.push(m);
-  else selecionadas[1] = m;
+  if (selecionadas.some(s => s.id === m.id)) return;
+  if (selecionadas.length < MAX_MECANICAS) selecionadas.push(m);
+  else {
+    mostrarAvisoCatalogo(`Você já escolheu ${MAX_MECANICAS} mecânicas. Remova uma pelo X para escolher outra.`);
+    return;
+  }
+  mostrarAvisoCatalogo('');
   renderMecanicas();
+  if ($('#catalogo').open) renderCatalogo();
 }
 
-$('#outras').addEventListener('click', () => {
-  projeto.sementeMecanicas++;
-  gravar('mi:projeto', projeto);
+function podarSelecionadas() {
+  const entrada = lerFormulario();
+  selecionadas = selecionadas.filter(m => mecanicaCompativel(m, entrada));
+}
+
+function atualizarEntradaMecanicas() {
+  podarSelecionadas();
   renderMecanicas();
+  if ($('#catalogo').open) renderCatalogo();
+}
+
+function abrirCatalogo() {
+  mostrarAvisoCatalogo('');
+  renderCatalogo();
+  $('#catalogo').showModal();
+}
+
+$('#abrir-catalogo').addEventListener('click', abrirCatalogo);
+$('#fechar-catalogo').addEventListener('click', () => $('#catalogo').close());
+$('#catalogo-pronto').addEventListener('click', () => $('#catalogo').close());
+$('#catalogo').addEventListener('click', e => {
+  if (e.target === $('#catalogo')) $('#catalogo').close();
 });
 
 $('#exemplo').addEventListener('click', () => {
   $('#tema').value = 'jogo cooperativo sobre exploração espacial';
   $('#jogadores').value = 4;
   $('#duracao').value = 20;
+  $('#outro-material').value = '';
   document.querySelectorAll('input[name=material]').forEach(i => { i.checked = true; });
   document.querySelector('input[name=dificuldade][value=facil]').checked = true;
-  renderMecanicas();
+  ajustarTema();
+  atualizarEntradaMecanicas();
 });
 
-$('#jogadores').addEventListener('change', renderMecanicas);
-document.querySelectorAll('input[name=material]').forEach(i => i.addEventListener('change', renderMecanicas));
+$('#tema').addEventListener('input', ajustarTema);
+$('#jogadores').addEventListener('change', atualizarEntradaMecanicas);
+document.querySelectorAll('input[name=material]').forEach(i => i.addEventListener('change', atualizarEntradaMecanicas));
+$('#outro-material').addEventListener('change', atualizarEntradaMecanicas);
 
 function mostrarErroChave(msg) {
   $('#erro-chave').textContent = msg;
@@ -145,7 +253,7 @@ $('#formulario').addEventListener('submit', e => {
   e.preventDefault();
   const entrada = lerFormulario();
   if (!entrada.tema) { mostrarAviso('Escreva um tema para o jogo (ou clique no exemplo).'); $('#tema').focus(); return; }
-  if (!selecionadas.length) { mostrarAviso('Escolha uma mecânica (ou duas para combinar).'); return; }
+  if (!selecionadas.length) { mostrarAviso('Escolha uma mecânica (ou até cinco para combinar).'); return; }
   if (!chaveOuConfig()) return;
   gerar(promptKit(entrada, selecionadas), { origem: 'gerado', entrada, mecanicas: [...selecionadas] });
 });
@@ -378,5 +486,6 @@ $('#kit').addEventListener('click', e => {
   render();
 });
 
+ajustarTema();
 renderMecanicas();
 render();

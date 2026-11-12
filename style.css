@@ -57,8 +57,14 @@ input[type=text], input[type=password], input[type=number], textarea {
   font: inherit; color: inherit; background: var(--branco);
   border: 2px solid var(--tinta); border-radius: 4px; padding: 8px 10px; width: 100%;
 }
+#tema {
+  min-height: 8.5em; line-height: 1.45; resize: vertical;
+  overflow-y: auto;
+}
 .campo-numero { display: inline-flex; align-items: center; gap: 8px; }
 .campo-numero input { width: 5.5em; }
+.material-outro { flex: 1 1 100%; display: grid; gap: 4px; font-weight: 700; }
+.material-outro input { font-weight: 400; }
 
 fieldset { border: 0; padding: 0; margin: 14px 0 0; display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
 legend { float: left; margin-right: 6px; font-weight: 700; }
@@ -85,6 +91,16 @@ button.nota-amarela:hover { border-color: var(--tinta); }
 .mecanica strong { font-size: 1rem; }
 .mecanica span { font-size: 0.88rem; color: var(--tinta-suave); line-height: 1.35; }
 .mecanica[aria-pressed=true] { background: var(--azul); box-shadow: 3px 3px 0 var(--tinta); }
+.mecanica:disabled { opacity: 0.55; cursor: not-allowed; }
+.mecanica .mecanica-motivo { color: #a33; font-weight: 700; }
+.mecanica-slot { position: relative; display: flex; }
+.mecanica-slot .mecanica { flex: 1; }
+.mecanica-selecionada { position: relative; }
+.mecanica-remover-x {
+  position: absolute; top: -10px; right: -10px; width: 28px; height: 28px; border-radius: 50%;
+  border: 2px solid var(--tinta); background: var(--vermelho); font-size: 0.8rem; line-height: 1; z-index: 1;
+}
+.vazio-mecanicas { grid-column: 1 / -1; margin: 0; font-family: var(--mao); color: var(--tinta-suave); }
 
 .linha-semente { display: flex; justify-content: space-between; align-items: center; margin: 10px 0 0; }
 .botao-texto { background: none; border: 0; padding: 4px 0; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
@@ -167,6 +183,17 @@ dialog { border: 2px solid var(--tinta); border-radius: 6px; background: var(--p
 dialog::backdrop { background: rgba(43, 43, 43, 0.45); }
 dialog ol { padding-left: 1.3em; }
 dialog a { color: var(--caneta-azul); }
+
+#catalogo { max-width: 920px; max-height: 90vh; overflow-y: auto; }
+.topo-catalogo { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.topo-catalogo .dica { margin: 4px 0 0; }
+.catalogo-lista { margin: 18px 0; }
+.catalogo-familia { margin-bottom: 20px; }
+.catalogo-familia h3 { margin: 0 0 8px; font-family: var(--mao); font-size: 1.1rem; color: var(--caneta-azul); }
+.catalogo-familia .mecanicas { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.catalogo-aviso { margin: 12px 0 0; padding: 8px 10px; background: var(--amarelo); border: 2px solid #d8c47a; border-radius: 4px; font-weight: 700; }
+.rodape-catalogo { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; border-top: 1px dashed rgba(43, 43, 43, 0.3); padding-top: 16px; }
+.rodape-catalogo .botao-principal { font-size: 1rem; padding: 10px 20px; }
 .erro-chave { background: var(--vermelho); border: 2px solid #b44; border-radius: 4px; padding: 10px 12px; }
 .campo { display: block; font-weight: 700; margin: 12px 0; }
 .campo input { margin-top: 4px; font-weight: 400; }
