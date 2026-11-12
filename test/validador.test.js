@@ -61,3 +61,16 @@ test('avisa se uma mecânica do kit for incompatível com o número de jogadores
   const avisos = validarKit(kitExemplo, { ...entradaExemplo, jogadores: 2 }, [{ nome: 'Papéis secretos', minJogadores: 4, maxJogadores: 8 }]);
   assert.ok(avisos.some(a => a.includes('Papéis secretos') && a.includes('4 a 8')));
 });
+
+test('modo apenasCartasNovas valida lote de cartas sem exigir kit completo', () => {
+  const lote = {
+    cartas: [{ nome: 'Carta extra', texto: 'Compre 2 cartas.', quantidade: 2 }],
+    rodada: ['Ana usa Carta extra.'],
+  };
+  assert.deepEqual(validarKit(lote, entradaExemplo, [], { apenasCartasNovas: true }), []);
+  const longa = {
+    ...lote,
+    cartas: [{ nome: 'Longa', texto: 'x'.repeat(121), quantidade: 1 }],
+  };
+  assert.ok(validarKit(longa, entradaExemplo, [], { apenasCartasNovas: true }).some(a => a.includes('121/120')));
+});

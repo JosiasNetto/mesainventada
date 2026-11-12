@@ -20,20 +20,26 @@ function maiorDistribuicaoInicial(preparacao) {
   return maxPorJogador;
 }
 
-export function validarKit(kit, entrada, mecanicas = []) {
+export function validarKit(kit, entrada, mecanicas = [], opcoes = {}) {
   const k = kit && typeof kit === 'object' ? kit : {};
+  const apenasCartas = Boolean(opcoes?.apenasCartasNovas);
   const avisos = [];
   const falta = campo => avisos.push(`Falta o campo "${campo}".`);
 
-  for (const campo of ['titulo', 'objetivo', 'fim']) if (!String(k[campo] ?? '').trim()) falta(campo);
-  for (const campo of ['preparacao', 'turno', 'cartas', 'rodada']) if (!Array.isArray(k[campo]) || !k[campo].length) falta(campo);
+  if (apenasCartas) {
+    if (!Array.isArray(k.cartas) || !k.cartas.length) falta('cartas');
+    if (!Array.isArray(k.rodada) || !k.rodada.length) falta('rodada');
+  } else {
+    for (const campo of ['titulo', 'objetivo', 'fim']) if (!String(k[campo] ?? '').trim()) falta(campo);
+    for (const campo of ['preparacao', 'turno', 'cartas', 'rodada']) if (!Array.isArray(k[campo]) || !k[campo].length) falta(campo);
+  }
 
   const turno = Array.isArray(k.turno) ? k.turno : [];
   const max = LIMITE_TURNO[entrada.dificuldade] ?? 5;
-  if (turno.length > max) avisos.push(`O turno tem ${turno.length} passos; para "${entrada.dificuldade}" o limite é ${max}.`);
+  if (!apenasCartas && turno.length > max) avisos.push(`O turno tem ${turno.length} passos; para "${entrada.dificuldade}" o limite é ${max}.`);
 
   const cartas = Array.isArray(k.cartas) ? k.cartas.filter(c => c && typeof c === 'object') : [];
-  if (cartas.length && (cartas.length < 4 || cartas.length > 12))
+  if (!apenasCartas && cartas.length && (cartas.length < 4 || cartas.length > 12))
     avisos.push(`São ${cartas.length} tipos de carta; use entre 4 e 12.`);
   const total = cartas.reduce((s, c) => s + (Number(c.quantidade) || 1), 0);
   if (total > 54) avisos.push(`São ${total} cartas; o limite para imprimir é 54 (6 folhas).`);
