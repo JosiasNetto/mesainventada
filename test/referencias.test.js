@@ -14,14 +14,20 @@ import { kitExemplo, entradaExemplo } from './kit-exemplo.js';
 
 test('jogosReferencia tem catálogo válido conectado às mecânicas existentes', () => {
   const idsMecanicas = new Set(catalogo.map(m => m.id));
+  const idsJogos = new Set();
   assert.ok(jogosReferencia.length >= 8);
   for (const jogo of jogosReferencia) {
     assert.ok(jogo.id && jogo.nome && jogo.resumo);
+    assert.equal(idsJogos.has(jogo.id), false, `id duplicado: ${jogo.id}`);
+    idsJogos.add(jogo.id);
+    assert.equal(jogo.origem, 'catalogo');
     assert.ok(jogo.minJogadores >= 1 && jogo.maxJogadores <= 8 && jogo.minJogadores <= jogo.maxJogadores);
     assert.ok(jogo.mecanicasIds.length >= 1);
     for (const id of jogo.mecanicasIds) assert.ok(idsMecanicas.has(id), `mecânica desconhecida: ${id}`);
     assert.ok(jogo.kit.titulo && jogo.kit.objetivo && jogo.kit.fim);
     assert.ok(jogo.kit.cartas.length >= 4);
+    const totalCartas = jogo.kit.cartas.reduce((s, c) => s + (Number(c.quantidade) || 1), 0);
+    assert.ok(totalCartas <= 45, `muitas cartas base em ${jogo.id} (${totalCartas}): deixe folga abaixo de 54`);
     for (const c of jogo.kit.cartas) {
       assert.ok(c.texto.length <= 120, `carta longa em ${jogo.id}: ${c.nome}`);
     }

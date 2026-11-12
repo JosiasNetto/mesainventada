@@ -49,7 +49,7 @@ npm test   # Node 22+, sem dependências
 |---|---|
 | Formulário | `index.html` + `app.js` + `src/jogadores.js` |
 | Módulo A: motor de mecânicas + catálogo de mecânicas | `src/mecanicas.js` |
-| Catálogo de jogos existentes e regras passadas | `src/referencias.js` |
+| Catálogo de jogos existentes e regras passadas | `src/jogos-referencia.json` + `src/referencias.js` |
 | API externa LLM: regras, cartas e rodada | `src/ia.js` |
 | Módulo B: validador de equilíbrio + travas | `src/validador.js` |
 | Módulo C: gerador de PDF A4 + templates das cartas | `renderImpressao` em `app.js` + `@media print` em `style.css` |
