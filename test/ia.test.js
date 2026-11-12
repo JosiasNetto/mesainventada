@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MODELO_PADRAO, promptKit, promptRevisao, extrairJSON, mensagemDeErro, chamarLLM, chaveValida } from '../src/ia.js';
+import { MODELO_PADRAO, orientacaoJogadores, promptKit, promptComReferencias, promptRevisao, extrairJSON, mensagemDeErro, chamarLLM, chaveValida } from '../src/ia.js';
 import { catalogo } from '../src/mecanicas.js';
+import { obterReferencia, referenciaDeTexto } from '../src/referencias.js';
 import { kitExemplo, entradaExemplo } from './kit-exemplo.js';
 
 const texto = msgs => msgs.map(m => m.content).join('\n');
@@ -91,4 +92,46 @@ test('promptKit aceita até cinco mecânicas e pede para combinar todas', () => 
   const t = texto(promptKit(entradaExemplo, cinco));
   assert.ok(t.includes('combine todas'));
   for (const m of cinco) assert.ok(t.includes(m.nome), m.nome);
+});
+
+test('orientacaoJogadores e promptKit adaptam instruções para solo, dupla e mesa grande', () => {
+  assert.match(orientacaoJogadores(1), /solo/i);
+  assert.match(orientacaoJogadores(2), /2 jogadores/);
+  assert.match(orientacaoJogadores(8), /mesa grande|54 cartas/);
+
+  const soloPrompt = texto(promptKit({ ...entradaExemplo, jogadores: 1 }, [catalogo[0]]));
+  assert.ok(soloPrompt.includes('1 jogador'));
+  assert.ok(soloPrompt.includes('rodada de teste solo'));
+});
+
+test('promptComReferencias monta prompts para novas cartas, novas regras e jogo inspirado', () => {
+  const uno = obterReferencia('uno');
+  const truco = obterReferencia('truco');
+  const colada = referenciaDeTexto('Regra da turma', 'Quem errar o palpite compra 2 cartas.');
+
+  const pCartas = texto(promptComReferencias(
+    { ...entradaExemplo, tema: 'cartas de sabotagem cooperativa' },
+    [catalogo[0]],
+    { modo: 'novas-cartas', referencias: [uno] },
+  ));
+  assert.ok(pCartas.includes('CARTAS NOVAS'));
+  assert.ok(pCartas.includes('Uno'));
+  assert.ok(pCartas.includes('sabotagem cooperativa'));
+
+  const pRegras = texto(promptComReferencias(
+    { ...entradaExemplo, tema: 'versão cooperativa sem eliminação' },
+    [catalogo[0]],
+    { modo: 'novas-regras', referencias: [uno] },
+  ));
+  assert.ok(pRegras.includes('VARIAÇÃO DE REGRAS'));
+  assert.ok(pRegras.includes('"mudancas"'));
+
+  const pInspirado = texto(promptComReferencias(
+    { ...entradaExemplo, tema: 'entrega espacial caótica' },
+    [catalogo[3]],
+    { modo: 'inspirado', referencias: [truco, colada] },
+  ));
+  assert.ok(pInspirado.includes('JOGO NOVO'));
+  assert.ok(pInspirado.includes('Truco'));
+  assert.ok(pInspirado.includes('Regra da turma'));
 });

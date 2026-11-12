@@ -49,6 +49,7 @@ npm test   # Node 22+, sem dependências
 |---|---|
 | Formulário | `index.html` + `app.js` |
 | Módulo A: motor de mecânicas + catálogo de mecânicas | `src/mecanicas.js` |
+| Catálogo de jogos existentes e regras passadas | `src/jogos-referencia.json` + `src/referencias.js` |
 | API externa LLM: regras, cartas e rodada | `src/ia.js` |
 | Módulo B: validador de equilíbrio + travas | `src/validador.js` |
 | Módulo C: gerador de PDF A4 + templates das cartas | `renderImpressao` em `app.js` + `@media print` em `style.css` |
@@ -66,3 +67,4 @@ npm test   # Node 22+, sem dependências
 - **Provocação.** A IA devolve uma pergunta que desafia uma suposição do jogo, conforme o compromisso de "incorporar provocações e contrapontos" do relatório.
 - **Dificuldade limita o turno.** "fácil" permite no máximo 3 passos no turno, e "médio" permite no máximo 5.
 - **Chave da própria pessoa (BYOK).** Não há chave do grupo embutida, e a tela explica como obter uma chave gratuita.
+- **Jogadores de 1 a 8.** O formulário, o filtro de mecânicas, o prompt e as travas tratam desde modo solo (1 pessoa) até mesas maiores (8 pessoas), avisando quando alguma mecânica deixa de ser compatível.

@@ -41,3 +41,36 @@ test('usa material que a pessoa não tem', () => {
   const semCaneta = validarKit(kitExemplo, { ...entradaExemplo, materiais: ['papel', 'dado'] });
   assert.ok(semCaneta.some(a => a.includes('"caneta" não está nos materiais')));
 });
+
+test('confere distribuição inicial de cartas para a quantidade de jogadores', () => {
+  const k = { ...kitExemplo, preparacao: ['Embaralhe o baralho.', 'Cada jogador recebe 5 cartas.'] };
+  assert.equal(validarKit(k, { ...entradaExemplo, jogadores: 4 }).some(a => a.includes('distribui')), false);
+  const avisos8 = validarKit(k, { ...entradaExemplo, jogadores: 8 });
+  assert.ok(avisos8.some(a => a.includes('distribui 5 cartas por pessoa') && a.includes('40 para 8 jogadores')));
+});
+
+test('avisa quando solo cita outros jogadores ou regras citam outra quantidade de jogadores', () => {
+  const kSolo = { ...kitExemplo, turno: ['Compre uma carta.', 'O próximo jogador descarta uma carta.'] };
+  assert.ok(validarKit(kSolo, { ...entradaExemplo, jogadores: 1 }).some(a => a.includes('1 jogador (solo)')));
+
+  const kOutro = { ...kitExemplo, objetivo: 'Um desafio para 6 jogadores cooperarem.' };
+  assert.ok(validarKit(kOutro, { ...entradaExemplo, jogadores: 3 }).some(a => a.includes('6 jogadores') && a.includes('para 3')));
+});
+
+test('avisa se uma mecânica do kit for incompatível com o número de jogadores', () => {
+  const avisos = validarKit(kitExemplo, { ...entradaExemplo, jogadores: 2 }, [{ nome: 'Papéis secretos', minJogadores: 4, maxJogadores: 8 }]);
+  assert.ok(avisos.some(a => a.includes('Papéis secretos') && a.includes('4 a 8')));
+});
+
+test('modo apenasCartasNovas valida lote de cartas sem exigir kit completo', () => {
+  const lote = {
+    cartas: [{ nome: 'Carta extra', texto: 'Compre 2 cartas.', quantidade: 2 }],
+    rodada: ['Ana usa Carta extra.'],
+  };
+  assert.deepEqual(validarKit(lote, entradaExemplo, [], { apenasCartasNovas: true }), []);
+  const longa = {
+    ...lote,
+    cartas: [{ nome: 'Longa', texto: 'x'.repeat(121), quantidade: 1 }],
+  };
+  assert.ok(validarKit(longa, entradaExemplo, [], { apenasCartasNovas: true }).some(a => a.includes('121/120')));
+});
