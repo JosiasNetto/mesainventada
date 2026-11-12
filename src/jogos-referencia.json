@@ -2,7 +2,7 @@
   {
     "id": "uno",
     "nome": "Uno (combinação e descarte)",
-    "resumo": "Esvazie a mão descartando cartas da mesma cor ou valor e use cartas especiais para atrapalhar rivais.",
+    "resumo": "Corra para esvaziar a mão combinando cor ou número da carta do topo, enquanto usa bloqueios e desvios para frear quem está quase vencendo.",
     "minJogadores": 2,
     "maxJogadores": 8,
     "materiais": ["papel"],
@@ -12,7 +12,7 @@
       "objetivo": "Ser a primeira pessoa a ficar sem cartas na mão.",
       "preparacao": [
         "Embaralhe o baralho.",
-        "Distribua 5 cartas para cada jogador e vire 1 no centro."
+        "Distribua 4 cartas para cada jogador e vire 1 no centro."
       ],
       "turno": [
         "Jogue 1 carta que combine em cor, símbolo ou valor com a carta do topo.",
@@ -21,25 +21,25 @@
       ],
       "fim": "Vence quem esvaziar a mão primeiro.",
       "cartas": [
-        { "nome": "Carta numérica baixa", "papel": "Base", "texto": "Valor 1 a 3. Jogue combinando cor ou número.", "quantidade": 6 },
-        { "nome": "Carta numérica alta", "papel": "Base", "texto": "Valor 4 a 9. Boa para descartar pontos altos cedo.", "quantidade": 6 },
-        { "nome": "Bloqueio", "papel": "Controle", "texto": "O próximo jogador perde a vez.", "quantidade": 4 },
-        { "nome": "Inverter", "papel": "Fluxo", "texto": "Inverte o sentido dos turnos (em 2 pessoas, joga de novo).", "quantidade": 4 },
-        { "nome": "Compra +2", "papel": "Ataque", "texto": "O próximo jogador compra 2 cartas e perde a vez.", "quantidade": 4 },
-        { "nome": "Coringa", "papel": "Coringa", "texto": "Jogue sobre qualquer carta e escolha a nova cor.", "quantidade": 2 }
+        { "nome": "Carta numérica baixa", "papel": "Base", "texto": "Valor 1 a 3. Ajuda a mudar de cor com segurança no início da partida.", "quantidade": 8 },
+        { "nome": "Carta numérica alta", "papel": "Base", "texto": "Valor 4 a 9. Boa para queimar cartas pesadas antes da reta final.", "quantidade": 8 },
+        { "nome": "Bloqueio", "papel": "Controle", "texto": "O próximo jogador perde a vez e não pode descartar nesta rodada.", "quantidade": 5 },
+        { "nome": "Inverter", "papel": "Fluxo", "texto": "Inverte o sentido dos turnos (em 2 pessoas, funciona como turno extra).", "quantidade": 5 },
+        { "nome": "Compra +2", "papel": "Ataque", "texto": "O próximo jogador compra 2 cartas do monte e perde a vez.", "quantidade": 6 },
+        { "nome": "Coringa", "papel": "Coringa", "texto": "Jogue sobre qualquer carta e escolha a nova cor ativa na mesa.", "quantidade": 4 }
       ],
       "rodada": [
         "Ana joga Carta numérica alta verde.",
         "Bia joga Bloqueio verde e pula Caio.",
         "Duda joga Coringa e muda a cor para azul."
       ],
-      "provocacao": "E se todas as cartas especiais exigissem descartar outra carta junto?"
+      "provocacao": "E se quem precisasse comprar cartas pudesse escolher entre o monte ou roubar da mão de quem está com menos cartas?"
     }
   },
   {
     "id": "truco",
     "nome": "Truco (vazas e apostas)",
-    "resumo": "Melhor de 3 rodadas por mão usando blefe e apostas crescentes para intimidar os adversários.",
+    "resumo": "Dispute mãos de melhor de 3 vazas em clima de bar: uma carta virada define os trunfos da rodada e qualquer pessoa pode dobrar a aposta no blefe.",
     "minJogadores": 2,
     "maxJogadores": 6,
     "materiais": ["papel", "caneta"],
@@ -58,23 +58,23 @@
       ],
       "fim": "Vence quem alcançar 12 pontos primeiro.",
       "cartas": [
-        { "nome": "Manilha", "papel": "Trunfo", "texto": "Carta mais forte da rodada, definida pela carta virada.", "quantidade": 4 },
-        { "nome": "Carta forte", "papel": "Pressão", "texto": "Vence quase todas as cartas comuns. Ótima para garantir vaza.", "quantidade": 6 },
-        { "nome": "Carta média", "papel": "Equilíbrio", "texto": "Serve para forçar resposta ou esconder força na primeira vaza.", "quantidade": 6 },
-        { "nome": "Carta fraca", "papel": "Blefe", "texto": "Baixo valor. Útil para blefar aposta alta ou descartar virada.", "quantidade": 4 }
+        { "nome": "Manilha", "papel": "Trunfo", "texto": "Carta mais forte da rodada, definida pela carta virada. Garante quase toda vaza.", "quantidade": 4 },
+        { "nome": "Carta forte", "papel": "Pressão", "texto": "Vence quase todas as cartas comuns. Ideal para segurar a segunda vaza.", "quantidade": 7 },
+        { "nome": "Carta média", "papel": "Equilíbrio", "texto": "Serve para testar a força da mesa ou forçar resposta na primeira vaza.", "quantidade": 7 },
+        { "nome": "Carta fraca", "papel": "Blefe", "texto": "Baixo valor. Ótima para blefar aposta alta ou descartar virada para baixo.", "quantidade": 6 }
       ],
       "rodada": [
         "Ana abre com Carta média.",
         "Bia pede aumento de aposta; Ana aceita.",
         "Caio vence a vaza com Manilha."
       ],
-      "provocacao": "E se quem perder uma aposta tivesse que revelar uma carta na mão seguinte?"
+      "provocacao": "E se aceitar um aumento de aposta obrigasse ambos os lados a trocar 1 carta da mão com a mesa?"
     }
   },
   {
     "id": "coup",
     "nome": "Coup (blefe de influências)",
-    "resumo": "Declare poderes de cartas ocultas sem precisar provar, a menos que alguém duvide e conteste você.",
+    "resumo": "Intriga política em uma corte distópica: declare poderes de personagens ocultos para acumular recursos e eliminar rivais, torcendo para ninguém contestar sua mentira.",
     "minJogadores": 3,
     "maxJogadores": 6,
     "materiais": ["papel", "caneta"],
@@ -93,24 +93,24 @@
       ],
       "fim": "Vence quem restar com ao menos 1 carta fechada.",
       "cartas": [
-        { "nome": "Tesoureiro", "papel": "Recursos", "texto": "Ação: ganhe 3 fichas. Bloqueia pedidos de ajuda externa.", "quantidade": 3 },
-        { "nome": "Atacante", "papel": "Eliminação", "texto": "Ação: pague 3 fichas para tentar eliminar 1 carta rival.", "quantidade": 3 },
-        { "nome": "Guardiã", "papel": "Defesa", "texto": "Reação: bloqueia um ataque direto contra você.", "quantidade": 3 },
-        { "nome": "Estrategista", "papel": "Troca", "texto": "Ação: compre 2 cartas do monte e devolva 2 à sua escolha.", "quantidade": 3 },
-        { "nome": "Capitão", "papel": "Pressão", "texto": "Ação: pegue 2 fichas de alguém. Bloqueia roubos contra você.", "quantidade": 3 }
+        { "nome": "Tesoureiro", "papel": "Recursos", "texto": "Ação: ganhe 3 fichas. Também bloqueia pedidos de ajuda externa de rivais.", "quantidade": 3 },
+        { "nome": "Atacante", "papel": "Eliminação", "texto": "Ação: pague 3 fichas para tentar eliminar 1 carta fechada de um oponente.", "quantidade": 3 },
+        { "nome": "Guardiã", "papel": "Defesa", "texto": "Reação: bloqueia um ataque direto do Atacante contra você.", "quantidade": 3 },
+        { "nome": "Estrategista", "papel": "Troca", "texto": "Ação: compre 2 cartas do monte e devolva 2 da mão à sua escolha.", "quantidade": 3 },
+        { "nome": "Capitão", "papel": "Pressão", "texto": "Ação: tome 2 fichas de alguém. Também bloqueia roubos contra você.", "quantidade": 3 }
       ],
       "rodada": [
         "Ana anuncia Tesoureiro e pega 3 fichas.",
         "Bia contesta; Ana mostra o Tesoureiro, pega outra carta e Bia perde 1 influência.",
         "Caio usa Guardiã para bloquear o ataque seguinte."
       ],
-      "provocacao": "E se contestar com sucesso desse uma carta extra em vez de só eliminar o rival?"
+      "provocacao": "E se quem contestar e errar, em vez de perder uma carta, ficasse proibido de blefar na rodada seguinte?"
     }
   },
   {
     "id": "carta-de-amor",
     "nome": "Carta de Amor (dedução rápida)",
-    "resumo": "Jogue com 1 carta na mão, compre outra no turno e escolha qual ativar para deduzir ou eliminar rivais.",
+    "resumo": "Dedução minimalista na corte real: você segura apenas 1 carta secreta, compra 1 no turno e escolhe qual ativar para expor ou eliminar rivais.",
     "minJogadores": 2,
     "maxJogadores": 4,
     "materiais": ["papel"],
@@ -123,30 +123,31 @@
         "Distribua 1 carta para cada jogador."
       ],
       "turno": [
-        "Compre 1 carta do monte (ficando com 2 na mão).",
-        "Escolha 1 das 2 cartas para descartar aberta e aplique seu efeito."
+        "Compre 1 carta do monte (ficando com 2 cartas na mão).",
+        "Escolha 1 das 2 cartas para descartar aberta e aplique o efeito dela.",
+        "Passe a vez; quem for eliminado revela sua carta e fica fora até a próxima rodada."
       ],
       "fim": "A rodada acaba se sobrar 1 pessoa ou o monte acabar; maior valor vence.",
       "cartas": [
-        { "nome": "Sentinela (1)", "papel": "Dedução", "texto": "Escolha um rival e chute o nome da carta dele; se acertar, ele sai.", "quantidade": 5 },
-        { "nome": "Espião (2)", "papel": "Informação", "texto": "Olhe em segredo a carta na mão de um jogador.", "quantidade": 2 },
-        { "nome": "Duelo (3)", "papel": "Comparação", "texto": "Compare mãos em segredo com um rival; o menor valor sai da rodada.", "quantidade": 2 },
-        { "nome": "Escudo (4)", "papel": "Proteção", "texto": "Até seu próximo turno, efeitos de outros jogadores não atingem você.", "quantidade": 2 },
-        { "nome": "Troca (6)", "papel": "Troca", "texto": "Troque sua carta restante pela carta de outro jogador.", "quantidade": 2 },
-        { "nome": "Relíquia (8)", "papel": "Risco", "texto": "Valor mais alto. Se você descartar esta carta, sai da rodada.", "quantidade": 1 }
+        { "nome": "Sentinela (1)", "papel": "Dedução", "texto": "Escolha um rival e chute o nome da carta dele (exceto Sentinela); se acertar, ele sai.", "quantidade": 5 },
+        { "nome": "Espião (2)", "papel": "Informação", "texto": "Olhe em segredo a carta na mão de um jogador para planejar seu próximo turno.", "quantidade": 2 },
+        { "nome": "Duelo (3)", "papel": "Comparação", "texto": "Compare mãos em segredo com um rival; quem tiver o menor valor sai da rodada.", "quantidade": 2 },
+        { "nome": "Escudo (4)", "papel": "Proteção", "texto": "Até seu próximo turno, você fica imune a efeitos de outros jogadores.", "quantidade": 2 },
+        { "nome": "Troca (6)", "papel": "Troca", "texto": "Troque sua carta restante pela carta na mão de outro jogador.", "quantidade": 2 },
+        { "nome": "Relíquia (8)", "papel": "Risco", "texto": "Valor mais alto do jogo. Se descartar esta carta por qualquer motivo, sai na hora.", "quantidade": 1 }
       ],
       "rodada": [
         "Ana compra Espião (2), descarta Sentinela (1) e chuta errado a carta de Bia.",
         "Bia compra e joga Escudo (4) para se proteger.",
         "Caio joga Duelo (3) contra Ana e compara valores."
       ],
-      "provocacao": "E se os jogadores eliminados continuassem votando no vencedor da rodada?"
+      "provocacao": "E se as cartas já descartadas pudessem ser recuperadas uma vez por quem pular sua própria compra?"
     }
   },
   {
     "id": "hanabi",
     "nome": "Hanabi (mão oculta cooperativa)",
-    "resumo": "Todos veem as cartas dos outros, menos as próprias, e precisam cooperar com dicas limitadas.",
+    "resumo": "Festival cooperativo de fogos de artifício: segure suas cartas viradas para os colegas, dê dicas restritas e monte sequências na mesa antes dos erros acabarem.",
     "minJogadores": 2,
     "maxJogadores": 5,
     "materiais": ["papel", "caneta"],
@@ -165,23 +166,23 @@
       ],
       "fim": "Vencem ao completar as sequências ou contam pontos quando o monte acaba; perdem com 3 erros.",
       "cartas": [
-        { "nome": "Abertura (1)", "papel": "Início", "texto": "Inicia uma sequência na mesa. Há várias cópias para facilitar o começo.", "quantidade": 6 },
-        { "nome": "Progresso (2-3)", "papel": "Meio", "texto": "Só entra após a carta anterior da mesma cor.", "quantidade": 8 },
-        { "nome": "Avanço (4)", "papel": "Risco", "texto": "Poucas cópias; descartar sem querer pode travar a sequência.", "quantidade": 4 },
-        { "nome": "Fechamento (5)", "papel": "Única", "texto": "Carta final da sequência. Recupera 1 ficha de dica ao ser jogada.", "quantidade": 2 }
+        { "nome": "Abertura (1)", "papel": "Início", "texto": "Inicia uma sequência de cor na mesa. Há várias cópias para destravar o começo.", "quantidade": 10 },
+        { "nome": "Progresso (2-3)", "papel": "Meio", "texto": "Só entra na mesa logo após a carta anterior da mesma cor.", "quantidade": 10 },
+        { "nome": "Avanço (4)", "papel": "Risco", "texto": "Tem poucas cópias; descartar sem aviso pode travar toda uma fila.", "quantidade": 6 },
+        { "nome": "Fechamento (5)", "papel": "Única", "texto": "Última carta da sequência. Recupera 1 ficha de dica ao ser jogada com sucesso.", "quantidade": 4 }
       ],
       "rodada": [
         "Ana gasta 1 dica e aponta duas cartas \"1\" na mão de Bia.",
         "Bia joga uma das cartas apontadas: é Abertura (1) e inicia a fila.",
         "Caio descarta uma carta repetida para devolver 1 ficha de dica."
       ],
-      "provocacao": "E se os jogadores pudessem ver 1 carta da própria mão, mas nunca falar sobre ela?"
+      "provocacao": "E se as dicas não pudessem apontar valores exatos, apenas dizer \"jogue algo da esquerda\" ou \"segure a mais nova\"?"
     }
   },
   {
     "id": "sushi-go",
     "nome": "Sushi Go! (draft de conjuntos)",
-    "resumo": "Escolha 1 carta da mão por turno e passe o restante adiante para montar conjuntos que pontuam.",
+    "resumo": "Banquete em esteira rolante: escolha 1 prato da mão por turno, passe os outros ao vizinho e dispute combos que dependem do que a mesa inteira pega.",
     "minJogadores": 2,
     "maxJogadores": 5,
     "materiais": ["papel", "caneta"],
@@ -190,33 +191,33 @@
       "titulo": "Sushi Go! (base de referência)",
       "objetivo": "Somar mais pontos em 3 rodadas combinando conjuntos de cartas escolhidas no draft.",
       "preparacao": [
-        "Distribua 7 cartas para cada jogador e prepare papel para marcar pontos."
+        "Distribua 6 cartas para cada jogador e prepare papel para marcar pontos."
       ],
       "turno": [
-        "Todos escolhem 1 carta da mão em segredo e revelam juntos.",
+        "Todos escolhem 1 carta da mão em segredo e revelam juntas.",
         "Passe as cartas restantes da mão para o jogador ao lado.",
         "Repita até acabarem as cartas da mão e some os pontos."
       ],
       "fim": "Após 3 rodadas, quem tiver mais pontos vence.",
       "cartas": [
-        { "nome": "Dupla", "papel": "Par", "texto": "Vale 5 pontos por par completo; 1 sozinha vale 0.", "quantidade": 6 },
-        { "nome": "Trio", "papel": "Trio", "texto": "Vale 10 pontos por conjunto de 3; menos de 3 vale 0.", "quantidade": 6 },
-        { "nome": "Maioria", "papel": "Disputa", "texto": "Quem tiver mais símbolos destes no fim da rodada ganha 6 pontos.", "quantidade": 6 },
-        { "nome": "Tempero", "papel": "Bônus", "texto": "Triplica o valor da próxima carta de prato jogada na sua frente.", "quantidade": 3 },
-        { "nome": "Sobremesa", "papel": "Final", "texto": "Acumula entre rodadas; quem tiver mais no fim do jogo ganha 6 pontos.", "quantidade": 3 }
+        { "nome": "Dupla", "papel": "Par", "texto": "Vale 5 pontos por par completo na sua frente; 1 carta sozinha vale 0.", "quantidade": 10 },
+        { "nome": "Trio", "papel": "Trio", "texto": "Vale 10 pontos por conjunto completo de 3; menos de 3 vale 0.", "quantidade": 9 },
+        { "nome": "Maioria", "papel": "Disputa", "texto": "Quem tiver mais destes no fim da rodada ganha 6 pontos (3 para o 2º).", "quantidade": 7 },
+        { "nome": "Tempero", "papel": "Bônus", "texto": "Triplica o valor da próxima carta de prato comum jogada sobre ela.", "quantidade": 5 },
+        { "nome": "Sobremesa", "papel": "Final", "texto": "Acumula entre rodadas; quem tiver mais no fim do jogo ganha 6 pontos.", "quantidade": 5 }
       ],
       "rodada": [
-        "Ana escolhe Dupla e passa 6 cartas para Bia.",
+        "Ana escolhe Dupla e passa 5 cartas para Bia.",
         "Bia pega Tempero esperando um prato alto depois.",
         "Todos revelam juntos e passam as mãos adiante."
       ],
-      "provocacao": "E se uma carta negativa pudesse ser passada junto para atrapalhar o vizinho?"
+      "provocacao": "E se a carta de menor valor jogada na rodada invertesse o sentido de passagem das mãos?"
     }
   },
   {
     "id": "for-sale",
     "nome": "À Venda (leilão em duas fases)",
-    "resumo": "Primeiro dê lances pelas melhores cartas de propriedade; depois use-as em leilões fechados por prêmios.",
+    "resumo": "Leilão imobiliário em dois atos: primeiro dispute propriedades pagando em moedas; depois use esses imóveis em lances fechados pelos cheques mais altos.",
     "minJogadores": 3,
     "maxJogadores": 6,
     "materiais": ["papel", "caneta"],
@@ -226,31 +227,33 @@
       "objetivo": "Terminar as duas fases com a maior soma de dinheiro.",
       "preparacao": [
         "Anote 14 moedas por jogador no papel.",
-        "Abra na mesa tantas cartas de propriedade quanto o número de jogadores."
+        "Abra na mesa tantas cartas de propriedade quanto o número de jogadores (serão 2 rodadas de leilão na Fase 1)."
       ],
       "turno": [
-        "Fase 1: faça um lance maior que o anterior ou passe e leve a menor carta da mesa pagando metade.",
-        "Fase 2: todos escolhem 1 carta comprada e revelam juntas; a maior leva o maior prêmio."
+        "Fase 1: faça um lance maior que o anterior ou passe e leve a menor propriedade da mesa pagando metade.",
+        "Fase 2: todos escolhem em segredo 1 propriedade comprada e revelam juntas na mesa.",
+        "Quem jogou a maior propriedade leva o maior cheque aberto, em ordem decrescente."
       ],
-      "fim": "Após todas as propriedades serem vendidas na Fase 2, soma-se dinheiro restante + prêmios.",
+      "fim": "Após todas as propriedades serem vendidas na Fase 2, soma-se dinheiro restante + cheques.",
       "cartas": [
-        { "nome": "Casa simples (1-4)", "papel": "Econômica", "texto": "Valor baixo para recuperar moedas no leilão ou descartar em rodada fraca.", "quantidade": 5 },
-        { "nome": "Sobrado (5-8)", "papel": "Intermediária", "texto": "Custo equilibrado para disputar prêmios médios na Fase 2.", "quantidade": 5 },
-        { "nome": "Mansão (9-12)", "papel": "Alta", "texto": "Valor alto. Exige lance alto na Fase 1, mas vence grandes prêmios.", "quantidade": 5 },
-        { "nome": "Cheque de venda", "papel": "Prêmio", "texto": "Vale de 0 a 15 pontos na Fase 2 conforme a carta disputada.", "quantidade": 5 }
+        { "nome": "Casa simples (1-4)", "papel": "Econômica", "texto": "Valor baixo para recuperar moedas no leilão ou descartar em rodada fraca.", "quantidade": 4 },
+        { "nome": "Sobrado (5-8)", "papel": "Intermediária", "texto": "Custo equilibrado para disputar cheques médios na Fase 2.", "quantidade": 4 },
+        { "nome": "Mansão (9-12)", "papel": "Alta", "texto": "Valor alto. Exige lance pesado na Fase 1, mas vence grandes cheques.", "quantidade": 4 },
+        { "nome": "Cheque modesto (0-7)", "papel": "Prêmio", "texto": "Prêmio baixo na Fase 2 — ótimo para descartar sua pior casa.", "quantidade": 6 },
+        { "nome": "Cheque milionário (8-15)", "papel": "Prêmio", "texto": "Prêmio alto disputado pelas maiores Mansões na Fase 2.", "quantidade": 6 }
       ],
       "rodada": [
         "Ana abre o leilão com 2 moedas pela Mansão (11).",
         "Bia cobre para 3; Caio passa, paga 1 e pega a Casa simples (2).",
         "Na Fase 2, Ana vence o Cheque de 14 com sua Mansão."
       ],
-      "provocacao": "E se os jogadores pudessem formar parcerias para dividir o custo de uma carta cara?"
+      "provocacao": "E se propriedades compradas na Fase 1 pudessem ser negociadas ou alugadas entre rivais antes da Fase 2?"
     }
   },
   {
     "id": "pega-em-6",
     "nome": "Pega em 6 (risco em filas)",
-    "resumo": "Todos escolhem 1 carta em segredo e encaixam em filas crescentes evitando pegar a 6ª carta da fila.",
+    "resumo": "Tensão numérica simultânea: todos revelam uma carta ao mesmo tempo e encaixam em quatro filas crescentes tentando não colocar a 6ª carta de nenhuma fila.",
     "minJogadores": 2,
     "maxJogadores": 8,
     "materiais": ["papel", "caneta"],
@@ -260,32 +263,32 @@
       "objetivo": "Terminar com a menor quantidade possível de pontos negativos.",
       "preparacao": [
         "Abra 4 cartas iniciais formando 4 filas na mesa.",
-        "Distribua 8 cartas para cada jogador e anote pontos negativos no papel."
+        "Distribua 4 cartas para cada jogador e anote pontos negativos no papel."
       ],
       "turno": [
         "Todos escolhem 1 carta da mão fechada e revelam ao mesmo tempo.",
-        "Do menor número ao maior, encaixe na fila com topo mais próximo abaixo dela.",
+        "Do menor número ao maior, encaixe na fila com topo mais próximo abaixo dela (se for menor que todos, escolha uma fila para recolher).",
         "Quem colocar a 6ª carta de uma fila recolhe as 5 anteriores como pontos negativos."
       ],
-      "fim": "Quando alguém atingir 40 pontos negativos, vence quem tiver menos pontos.",
+      "fim": "Após 3 rodadas de 4 turnos (ou ao atingir 30 pontos negativos), vence quem tiver menos pontos.",
       "cartas": [
-        { "nome": "Carta segura (1 penalidade)", "papel": "Baixo risco", "texto": "Soma só 1 ponto negativo se você recolher a fila.", "quantidade": 8 },
-        { "nome": "Carta intermediária (2 penalidades)", "papel": "Ponte", "texto": "Ajuda a ajustar distância nas filas, mas pesa 2 pontos.", "quantidade": 6 },
-        { "nome": "Carta tensa (3 penalidades)", "papel": "Risco", "texto": "Número arriscado que vale 3 pontos negativos se capturada.", "quantidade": 4 },
-        { "nome": "Carta bomba (5 penalidades)", "papel": "Perigo", "texto": "Alto risco: vale 5 pontos negativos para quem pegar a fila.", "quantidade": 2 }
+        { "nome": "Carta segura (1 penalidade)", "papel": "Baixo risco", "texto": "Soma só 1 ponto negativo se você acabar recolhendo a fila.", "quantidade": 12 },
+        { "nome": "Carta intermediária (2 penalidades)", "papel": "Ponte", "texto": "Ajuda a ajustar distância nas filas, mas pesa 2 pontos negativos.", "quantidade": 12 },
+        { "nome": "Carta tensa (3 penalidades)", "papel": "Risco", "texto": "Número arriscado que vale 3 pontos negativos se capturada.", "quantidade": 8 },
+        { "nome": "Carta bomba (5 penalidades)", "papel": "Perigo", "texto": "Alto risco: vale 5 pontos negativos para quem estourar a fila.", "quantidade": 6 }
       ],
       "rodada": [
         "Ana revela 14 e Bia revela 19.",
         "Ana encaixa 14 como 5ª carta da fila 2.",
-        "Bia precisa colocar 19 como 6ª carta e recolhe os 7 pontos negativos da fila."
+        "Bia precisa colocar 19 como 6ª carta e recolhe os pontos negativos da fila."
       ],
-      "provocacao": "E se uma vez por rodada um jogador pudesse inverter a ordem crescente de uma fila?"
+      "provocacao": "E se quem recolhesse uma fila pudesse devolver 1 carta dela à escolha para o jogador seguinte?"
     }
   },
   {
     "id": "expedicao-solo",
     "nome": "Expedição Solo (gestão de baralho)",
-    "resumo": "Jogo solo de sobrevivência: gerencie um baralho curto para vencer desafios antes que a energia acabe.",
+    "resumo": "Aventura solo de sobrevivência em trilha hostil: cada desafio vencido entra como melhoria no seu baralho, mas cartas de desgaste drenam sua energia aos poucos.",
     "minJogadores": 1,
     "maxJogadores": 1,
     "materiais": ["papel", "caneta"],
@@ -300,27 +303,27 @@
       "turno": [
         "Vire o próximo Desafio e compre 3 cartas do seu baralho.",
         "Gaste energia ou efeitos das cartas para atingir a força do Desafio.",
-        "Descarte as cartas usadas; se vencer, guarde o Desafio como melhoria."
+        "Descarte as cartas usadas; se vencer, guarde o Desafio como melhoria no seu descarte."
       ],
       "fim": "Vence ao superar os 4 Desafios; perde se a energia chegar a 0 ou o baralho esgotar no desafio final.",
       "cartas": [
-        { "nome": "Suprimento básico", "papel": "Recurso", "texto": "Gera +1 de força sem gastar energia.", "quantidade": 6 },
-        { "nome": "Equipamento", "papel": "Melhoria", "texto": "Gera +2 de força ou permite comprar mais 1 carta.", "quantidade": 4 },
-        { "nome": "Desafio de trilha", "papel": "Obstáculo", "texto": "Exige 3 a 5 de força para ser vencido e virar melhoria.", "quantidade": 5 },
-        { "nome": "Desgaste", "papel": "Penalidade", "texto": "Carta fraca: reduz 1 de força e consome 1 de energia se mantida.", "quantidade": 3 }
+        { "nome": "Suprimento básico", "papel": "Recurso", "texto": "Gera +1 de força sem gastar energia do seu marcador.", "quantidade": 6 },
+        { "nome": "Equipamento", "papel": "Melhoria", "texto": "Gera +2 de força ou permite comprar mais 1 carta neste turno.", "quantidade": 4 },
+        { "nome": "Desafio de trilha", "papel": "Obstáculo", "texto": "Exige 3 a 5 de força para ser vencido e virar melhoria (+2 de força depois).", "quantidade": 5 },
+        { "nome": "Desgaste", "papel": "Penalidade", "texto": "Carta pesada: reduz 1 de força e consome 1 de energia se não for descartada.", "quantidade": 3 }
       ],
       "rodada": [
         "Ana vira Desafio de força 4 e compra 2 Suprimentos e 1 Desgaste.",
         "Ana gasta 2 de energia para compensar o Desgaste e soma 4 de força.",
         "Desafio vencido entra como melhoria no monte de descarte."
       ],
-      "provocacao": "E se cada carta melhorada aumentasse a dificuldade dos próximos desafios?"
+      "provocacao": "E se vencer um desafio exigisse sacrificar definitivamente uma carta boa do seu baralho?"
     }
   },
   {
     "id": "noite-dos-infiltrados",
     "nome": "Noite dos Infiltrados (papéis secretos)",
-    "resumo": "Cada pessoa recebe um papel secreto; ações rápidas acontecem antes de uma votação única.",
+    "resumo": "Mistério relâmpago em uma única noite: na escuridão, papéis mudam de mãos sem que todos saibam — descubra quem virou o Infiltrado antes da votação final.",
     "minJogadores": 4,
     "maxJogadores": 8,
     "materiais": ["papel"],
@@ -339,17 +342,797 @@
       ],
       "fim": "Se um Infiltrado for votado, o grupo vence; caso contrário, os Infiltrados vencem.",
       "cartas": [
-        { "nome": "Infiltrado", "papel": "Ameaça", "texto": "Sabe quem é o outro Infiltrado. Precisa desviar suspeitas na discussão.", "quantidade": 2 },
-        { "nome": "Investigador", "papel": "Informação", "texto": "Pode olhar em segredo a carta de 1 outro jogador na fase oculta.", "quantidade": 2 },
+        { "nome": "Infiltrado", "papel": "Ameaça", "texto": "Conhece o outro Infiltrado. Precisa inventar um álibi convincente na discussão.", "quantidade": 2 },
+        { "nome": "Investigador", "papel": "Informação", "texto": "Olha em segredo a carta de 1 outro jogador durante a fase oculta.", "quantidade": 2 },
         { "nome": "Embaralhador", "papel": "Caos", "texto": "Troca sem olhar as cartas de dois outros jogadores na fase oculta.", "quantidade": 2 },
-        { "nome": "Morador", "papel": "Comum", "texto": "Sem poder noturno. Usa dedução e argumentos para achar o Infiltrado.", "quantidade": 4 }
+        { "nome": "Insone", "papel": "Verificação", "texto": "Acorda por último na fase oculta e confere se sua própria carta foi trocada.", "quantidade": 2 },
+        { "nome": "Morador", "papel": "Comum", "texto": "Sem poder noturno. Usa dedução, lógica e contradições para achar o Infiltrado.", "quantidade": 4 }
       ],
       "rodada": [
         "Na fase oculta, Bia (Investigadora) olha a carta de Caio.",
         "Duda (Embaralhadora) troca as cartas de Ana e Caio sem contar a ninguém.",
         "Na discussão, Bia acusa Caio, mas Caio agora tem outra carta."
       ],
-      "provocacao": "E se um jogador eliminado na votação levasse junto quem votou nele?"
+      "provocacao": "E se um Infiltrado pudesse se revelar no meio da discussão para anular o poder noturno de alguém?"
+    }
+  },
+  {
+    "id": "saqueadores-da-masmorra",
+    "nome": "Saqueadores da Masmorra (loot e traição)",
+    "resumo": "Fantasia cômica em que aventureiros chutam portas, negociam alianças para vencer monstros bizarros e traem colegas bem na hora do golpe final.",
+    "minJogadores": 3,
+    "maxJogadores": 6,
+    "materiais": ["papel", "caneta", "dado"],
+    "mecanicasIds": ["negociacao", "forcar-sorte"],
+    "kit": {
+      "titulo": "Saqueadores da Masmorra",
+      "objetivo": "Ser a primeira pessoa a alcançar o nível 10 derrotando monstros ou usando tesouros.",
+      "preparacao": [
+        "Anote o nível 1 para cada participante no papel.",
+        "Separe Portas e Tesouros em dois montes e distribua 2 cartas iniciais para cada jogador (1 de cada monte)."
+      ],
+      "turno": [
+        "Vire 1 carta de Porta: se for Monstro, compare seu nível + equipamentos contra a força dele.",
+        "Se perder, negocie ajuda com um rival dividindo tesouros; os outros podem reforçar o monstro.",
+        "Se vencer, suba de nível e pegue os tesouros; se desistir, role o dado (5 ou 6 escapa; senão sofre a penalidade).",
+        "Sem combate, equipe itens novos e fique com no máximo 4 cartas na mão."
+      ],
+      "fim": "Vence imediatamente quem atingir o nível 10 (o último nível exige derrotar um Monstro).",
+      "cartas": [
+        { "nome": "Goblin Estagiário", "papel": "Monstro", "texto": "Força 3. Se falhar na fuga, você perde 1 equipamento equipado na mesa.", "quantidade": 4 },
+        { "nome": "Dragão Burocrata", "papel": "Monstro", "texto": "Força 9. Se vencer, sobe 2 níveis. Se falhar na fuga, volta ao nível 1.", "quantidade": 3 },
+        { "nome": "Armadilha de Imposto", "papel": "Maldição", "texto": "Jogue em qualquer rival: ele descarta o item mais valioso que estiver usando.", "quantidade": 4 },
+        { "nome": "Botas de Fuga Rápida", "papel": "Equipamento", "texto": "Fica na sua frente: soma +2 de força em combate e +1 na rolagem de fuga.", "quantidade": 5 },
+        { "nome": "Espada de Papelão", "papel": "Equipamento", "texto": "Fica na sua frente: soma +3 de força, mas quebra se você perder um combate.", "quantidade": 5 },
+        { "nome": "Poção Duvidosa", "papel": "Uso Único", "texto": "Jogue em qualquer combate para somar +3 a um lado — herói ou monstro.", "quantidade": 6 },
+        { "nome": "Reforço Mutante", "papel": "Sabotagem", "texto": "Jogue sobre um monstro em combate: ele ganha +4 de força e dá +1 tesouro.", "quantidade": 5 },
+        { "nome": "Baú de Tesouro", "papel": "Recompensa", "texto": "Concede +1 nível imediato ou vale +2 de força descartada em um combate.", "quantidade": 8 }
+      ],
+      "rodada": [
+        "Ana vira Dragão Burocrata (9) e tem força 7; oferece 2 tesouros para Bia ajudar.",
+        "Bia aceita somar +3, mas Caio joga Reforço Mutante (+4) no Dragão.",
+        "Ana precisa fugir, rola o dado e tira 2, voltando ao nível 1."
+      ],
+      "provocacao": "E se o aliado que ajudou no combate pudesse roubar o nível ganho caso contribuísse com mais força?"
+    }
+  },
+  {
+    "id": "oficina-a-vapor",
+    "nome": "Oficina a Vapor (trocas e construção)",
+    "resumo": "Em uma metrópole steampunk nos céus, role o dado para gerar carvão, cobre e vapor, negocie trocas livres na mesa e erga estruturas até 7 pontos.",
+    "minJogadores": 3,
+    "maxJogadores": 5,
+    "materiais": ["papel", "caneta", "dado"],
+    "mecanicasIds": ["negociacao", "gestao-recursos"],
+    "kit": {
+      "titulo": "Oficina a Vapor",
+      "objetivo": "Somar 7 pontos em Construções steampunk gerenciando recursos e trocas.",
+      "preparacao": [
+        "Anote 0 pontos por pessoa e deixe as Construções abertas no centro.",
+        "Embaralhe os Recursos e distribua 3 cartas para cada jogador."
+      ],
+      "turno": [
+        "Role o dado: todos recebem 1 carta do monte cujo número coincida com o dado (no 6, quem tiver +4 cartas descarta metade).",
+        "Negocie trocas de cartas livremente com qualquer jogador interessado.",
+        "Gaste combinações de Recursos para pegar uma Construção do centro e somar pontos."
+      ],
+      "fim": "Vence quem alcançar 7 pontos primeiro no fim do próprio turno.",
+      "cartas": [
+        { "nome": "Carvão Mineral (1-2)", "papel": "Recurso", "texto": "Combustível pesado. Usado para construir Caldeiras e Dirigíveis.", "quantidade": 7 },
+        { "nome": "Cobre Polido (2-3)", "papel": "Recurso", "texto": "Metal condutor. Essencial para Engrenagens e Torres Cronométricas.", "quantidade": 7 },
+        { "nome": "Pressão de Vapor (4-5)", "papel": "Recurso", "texto": "Energia limpa. Alimenta Dirigíveis e Torres.", "quantidade": 5 },
+        { "nome": "Engrenagem Rara (1-5)", "papel": "Recurso", "texto": "Peça versátil: substitui qualquer 1 recurso na hora de construir.", "quantidade": 5 },
+        { "nome": "Caldeira Portátil", "papel": "Construção", "texto": "Custo: 1 Carvão + 1 Cobre. Vale 1 ponto e dá +1 recurso extra por rodada.", "quantidade": 6 },
+        { "nome": "Dirigível de Carga", "papel": "Construção", "texto": "Custo: 2 Vapores + 1 Carvão. Vale 2 pontos e permite trocar 2:1 com o monte.", "quantidade": 5 },
+        { "nome": "Torre Cronométrica", "papel": "Construção", "texto": "Custo: 2 Cobres + 2 Vapores + 1 Engrenagem. Vale 3 pontos de vitória.", "quantidade": 3 }
+      ],
+      "rodada": [
+        "Ana rola o dado: sai 4; todos pegam Pressão de Vapor do monte.",
+        "Bia troca 2 Carvões por 1 Vapor com Caio.",
+        "Ana gasta 2 Vapores e 1 Carvão para erguer um Dirigível de Carga (2 pts)."
+      ],
+      "provocacao": "E se nenhuma troca pudesse ser recusada caso o proponente pagasse 1 carta extra de taxa?"
+    }
+  },
+  {
+    "id": "manual-do-caos",
+    "nome": "Manual do Caos (humor e juiz)",
+    "resumo": "Humor ácido sobre gafes e desastres cotidianos: a cada rodada um juiz lê uma situação absurda e escolhe a resposta anônima mais hilária da mesa.",
+    "minJogadores": 3,
+    "maxJogadores": 8,
+    "materiais": ["papel"],
+    "mecanicasIds": ["colecao-conjuntos"],
+    "kit": {
+      "titulo": "Manual do Caos",
+      "objetivo": "Coletar 5 cartas de Situação vencendo rodadas escolhidas pelo Juiz.",
+      "preparacao": [
+        "Separe as Situações e as Respostas em dois montes.",
+        "Distribua 3 cartas de Resposta para cada jogador e sorteie o primeiro Juiz."
+      ],
+      "turno": [
+        "O Juiz vira 1 Situação e lê a frase em voz alta com a lacuna aberta.",
+        "Os demais entregam 1 carta de Resposta da mão virada para baixo.",
+        "O Juiz embaralha as respostas, lê todas completando a frase e premia a melhor.",
+        "Quem jogou a escolhida ganha a Situação (1 ponto); todos repõem até 3 e o Juiz gira."
+      ],
+      "fim": "Vence quem juntar 5 cartas de Situação primeiro.",
+      "cartas": [
+        { "nome": "Gafe de Reunião", "papel": "Situação", "texto": "\"Antes de fechar o microfone na chamada de vídeo, deixei vazar _____.\"", "quantidade": 3 },
+        { "nome": "Desastre Romântico", "papel": "Situação", "texto": "\"O primeiro encontro ia ótimo até eu tentar impressionar falando de _____.\"", "quantidade": 3 },
+        { "nome": "Crise Familiar", "papel": "Situação", "texto": "\"Minha tia parou o almoço de domingo para anunciar orgulhosa _____.\"", "quantidade": 3 },
+        { "nome": "Sobrevivência Urbana", "papel": "Situação", "texto": "\"O boleto venceu, o metrô parou e minha única saída foi _____.\"", "quantidade": 3 },
+        { "nome": "Desculpa Esfarrapada", "papel": "Resposta", "texto": "\"fingir que era tudo um teste psicológico para um documentário independente\"", "quantidade": 8 },
+        { "nome": "Objeto Suspeito", "papel": "Resposta", "texto": "\"um tupperware sem tampa guardado desde a Copa de 2014\"", "quantidade": 8 },
+        { "nome": "Impulso Questionável", "papel": "Resposta", "texto": "\"mandar áudio de sete minutos chorando no grupo errado do condomínio\"", "quantidade": 8 },
+        { "nome": "Conselho Terrível", "papel": "Resposta", "texto": "\"resolver o problema no grito usando apenas uma airfryer emprestada\"", "quantidade": 8 }
+      ],
+      "rodada": [
+        "Ana (Juíza) lê Gafe de Reunião com a lacuna.",
+        "Bia, Caio e Duda entregam respostas fechadas.",
+        "Ana escolhe \"um tupperware sem tampa guardado desde a Copa de 2014\"; Bia leva 1 ponto."
+      ],
+      "provocacao": "E se o Juiz não pudesse só escolher a melhor, mas tivesse que adivinhar quem jogou ela para validar o ponto?"
+    }
+  },
+  {
+    "id": "casos-sombrios",
+    "nome": "Casos Sombrios (mistério lateral)",
+    "resumo": "Investigação noir de pensamento lateral: o guardião lê uma cena enigmática e esconde a solução, respondendo apenas sim, não ou irrelevante até o grupo montar o quebra-cabeça.",
+    "minJogadores": 2,
+    "maxJogadores": 8,
+    "materiais": ["papel"],
+    "mecanicasIds": ["comunicacao-limitada"],
+    "kit": {
+      "titulo": "Casos Sombrios",
+      "objetivo": "Desvendar a história completa por trás de 3 enigmas usando perguntas fechadas.",
+      "preparacao": [
+        "Defina quem será o Guardião do primeiro Caso.",
+        "O Guardião puxa 1 Enigma em segredo e deixa as cartas de Ajuda na mesa."
+      ],
+      "turno": [
+        "O Guardião lê apenas a Cena inicial do Enigma, escondendo a Solução.",
+        "Os detetives fazem perguntas abertas de raciocínio; o Guardião só responde \"Sim\", \"Não\" ou \"Irrelevante\".",
+        "Se travarem, descartam 1 carta de Ajuda para o Guardião revelar um detalhe específico.",
+        "Quando alguém acertar o motivo real da cena, revele a Solução e troque o Guardião."
+      ],
+      "fim": "Termina quando o grupo resolver 3 Casos (ou esgotar as Ajudas sem solução).",
+      "cartas": [
+        { "nome": "O Farol Sem Mar", "papel": "Enigma", "texto": "Cena: Um homem morre de sede em um bote intacto. Solução: O bote caiu no topo de uma duna seca após um furacão.", "quantidade": 2 },
+        { "nome": "O Último Brinde", "papel": "Enigma", "texto": "Cena: Dois amigos bebem o mesmo suco; um morre. Solução: O veneno estava no gelo e o sobrevivente bebeu rápido.", "quantidade": 2 },
+        { "nome": "A Janela Fechada", "papel": "Enigma", "texto": "Cena: Quarto trancado com cacos de vidro e água. Solução: O vento derrubou o aquário onde o peixe vivia.", "quantidade": 2 },
+        { "nome": "O Elevador do 12º", "papel": "Enigma", "texto": "Cena: Só vai de elevador até o 8º andar, salvo na chuva. Solução: É baixo e usa o guarda-chuva no botão 12.", "quantidade": 2 },
+        { "nome": "A Luz Apagada", "papel": "Enigma", "texto": "Cena: O faroleiro apaga a torre e dorme; vê 50 mortos no jornal. Solução: O navio bateu nos recifes sem sinal.", "quantidade": 2 },
+        { "nome": "Pista de Objeto", "papel": "Ajuda", "texto": "Descarte para obrigar o Guardião a confirmar qual é o objeto central do mistério.", "quantidade": 4 },
+        { "nome": "Pista de Cronologia", "papel": "Ajuda", "texto": "Descarte para o Guardião revelar o que aconteceu logo antes da cena inicial.", "quantidade": 4 }
+      ],
+      "rodada": [
+        "Ana (Guardiã) lê a Cena do Último Brinde.",
+        "Bia pergunta: \"O suco estava envenenado?\" Ana: \"Não exatamente.\"",
+        "Caio gasta Pista de Objeto; Ana confirma \"gelo\" e o grupo deduz a resposta."
+      ],
+      "provocacao": "E se o Guardião pudesse mentir uma única vez por mistério para despistar conclusões fáceis?"
+    }
+  },
+  {
+    "id": "frota-estelar",
+    "nome": "Frota Estelar (construção de baralho)",
+    "resumo": "Batalha espacial de deckbuilding: comece com naves fracas, compre cruzadores de um mercado central e dispare combos de facção para derrubar o escudo rival.",
+    "minJogadores": 2,
+    "maxJogadores": 4,
+    "materiais": ["papel", "caneta"],
+    "mecanicasIds": ["gestao-recursos", "draft"],
+    "kit": {
+      "titulo": "Frota Estelar",
+      "objetivo": "Reduzir os 20 pontos de escudo dos rivais a zero construindo um baralho mais forte durante o jogo.",
+      "preparacao": [
+        "Anote 20 pontos de escudo por pessoa e entregue 4 Naves Batedoras e 2 Caças Leves para cada jogador.",
+        "Embaralhe as cartas de Mercado no centro e abra 4 delas."
+      ],
+      "turno": [
+        "Compre 3 cartas do seu baralho pessoal (se acabar, embaralhe seu descarte).",
+        "Jogue suas cartas na ordem que quiser somando Créditos (compra do Mercado) e Ataque (tira escudo rival).",
+        "Se baixar 2 cartas da mesma facção no turno, ative o bônus de Aliança delas.",
+        "Descarte todas as cartas jogadas e reponha os espaços vazios do Mercado."
+      ],
+      "fim": "Vence quem restar com escudo acima de 0.",
+      "cartas": [
+        { "nome": "Nave Batedora", "papel": "Inicial", "texto": "Gera +1 Crédito para comprar cartas do Mercado central.", "quantidade": 16 },
+        { "nome": "Caça Leve", "papel": "Inicial", "texto": "Causa +1 de Ataque ao escudo de qualquer oponente.", "quantidade": 8 },
+        { "nome": "Cargueiro Estelar", "papel": "Mercado (Comércio)", "texto": "Custo 2. Gera +2 Créditos. Aliança Comércio: compre +1 carta.", "quantidade": 3 },
+        { "nome": "Corveta de Assalto", "papel": "Mercado (Tática)", "texto": "Custo 3. Causa +3 de Ataque. Aliança Tática: +2 de Ataque extra.", "quantidade": 3 },
+        { "nome": "Sonda Sucateira", "papel": "Mercado (Sucata)", "texto": "Custo 2. Gera +1 Crédito e permite destruir 1 carta fraca da mão.", "quantidade": 3 },
+        { "nome": "Cruzador de Plasma", "papel": "Mercado (Tática)", "texto": "Custo 5. Causa +5 de Ataque. Aliança Tática: alvo descarta 1 carta.", "quantidade": 3 },
+        { "nome": "Estação Orbital", "papel": "Base (Comércio)", "texto": "Custo 4. Fica na mesa com 4 de defesa: gera +1 Crédito todo turno.", "quantidade": 2 },
+        { "nome": "Canhão Solar", "papel": "Mercado (Sucata)", "texto": "Custo 4. Causa +4 de Ataque e restaura +2 do seu próprio escudo.", "quantidade": 2 }
+      ],
+      "rodada": [
+        "Ana compra 2 Batedoras e 1 Caça; gasta 2 Créditos pelo Cargueiro Estelar.",
+        "Na próxima volta do baralho, Ana compra Cargueiro + Corveta e ataca.",
+        "Bia constrói Estação Orbital para se proteger e acelerar compras."
+      ],
+      "provocacao": "E se o baralho nunca fosse embaralhado ao acabar — apenas virado de volta na ordem em que você descartou?"
+    }
+  },
+  {
+    "id": "oraculo-dos-mitos",
+    "nome": "Oráculo dos Mitos (dicas poéticas)",
+    "resumo": "Associação criativa com mitos em texto: o Oráculo dá uma pista poética para sua carta e os rivais misturam cartas parecidas para dividir os votos.",
+    "minJogadores": 3,
+    "maxJogadores": 8,
+    "materiais": ["papel", "caneta"],
+    "mecanicasIds": ["comunicacao-limitada", "blefe"],
+    "kit": {
+      "titulo": "Oráculo dos Mitos",
+      "objetivo": "Somar 15 pontos dando pistas na medida certa e confundindo votos rivais.",
+      "preparacao": [
+        "Anote 0 pontos para cada pessoa e embaralhe todas as cartas de Mito.",
+        "Distribua 4 cartas para cada jogador."
+      ],
+      "turno": [
+        "O Oráculo escolhe 1 carta da mão em segredo e diz uma pista curta (até 3 palavras ou um verso).",
+        "Os demais entregam 1 carta fechada da mão que também combine com a pista.",
+        "Embaralhe todas e leia em voz alta numerando-as; todos (menos o Oráculo) votam em segredo na original.",
+        "Se alguns acertarem (não todos!), Oráculo e acertadores ganham 3 pontos; cartas enganosas ganham +1 por voto."
+      ],
+      "fim": "Vence quem chegar a 15 pontos primeiro.",
+      "cartas": [
+        { "nome": "Fio de Ariadne", "papel": "Mito", "texto": "\"Um novelo dourado guiando passos perdidos na escuridão de um labirinto vivo.\"", "quantidade": 3 },
+        { "nome": "Asas de Cera", "papel": "Mito", "texto": "\"O calor do orgulho derretendo o sonho de alcançar o sol antes da queda.\"", "quantidade": 3 },
+        { "nome": "Espelho de Medusa", "papel": "Mito", "texto": "\"Um olhar que transforma coragem em pedra fria dentro de um salão mudo.\"", "quantidade": 3 },
+        { "nome": "Caixa de Pandora", "papel": "Mito", "texto": "\"Uma tampa entreaberta soltando sombras antigas com esperança no fundo.\"", "quantidade": 3 },
+        { "nome": "Canto da Sereia", "papel": "Mito", "texto": "\"Melodia doce prometendo descanso aos cansados logo antes dos rochedos.\"", "quantidade": 3 },
+        { "nome": "Barco de Caronte", "papel": "Mito", "texto": "\"Travessia em névoa cinzenta onde só uma moeda de cobre compra passagem.\"", "quantidade": 3 },
+        { "nome": "Lobo do Inverno", "papel": "Mito", "texto": "\"Correntes quebradas anunciando a noite sem fim que devora estrelas antigas.\"", "quantidade": 3 },
+        { "nome": "Fênix das Cinzas", "papel": "Mito", "texto": "\"Fim em brasas brilhantes que acende um recomeço ainda mais intenso.\"", "quantidade": 3 },
+        { "nome": "Maçã da Discórdia", "papel": "Mito", "texto": "\"Um presente dourado entregue sem dono certo para acender uma guerra vaidosa.\"", "quantidade": 3 },
+        { "nome": "Cavalo de Madeira", "papel": "Mito", "texto": "\"Um tributo silencioso aceito com festa escondendo perigo atrás dos portões.\"", "quantidade": 3 },
+        { "nome": "Foice do Tempo", "papel": "Mito", "texto": "\"Areia caindo devagar lembrando que todo império retorna ao pó.\"", "quantidade": 3 },
+        { "nome": "Chama Roubada", "papel": "Mito", "texto": "\"Uma faísca proibida entregue aos mortais para iluminar cavernas frias.\"", "quantidade": 3 }
+      ],
+      "rodada": [
+        "Ana (Oráculo) escolhe Asas de Cera e diz: \"ambição quente\".",
+        "Bia entrega Chama Roubada e Caio entrega Fênix das Cinzas.",
+        "Bia acerta a carta de Ana, mas Caio cai na Chama de Bia — Ana e Bia fazem 3 pontos!"
+      ],
+      "provocacao": "E se o Oráculo precisasse usar exatamente uma palavra inventada por quem está à sua esquerda?"
+    }
+  },
+  {
+    "id": "ultimo-bunker",
+    "nome": "Último Bunker (crise cooperativa)",
+    "resumo": "Sobrevivência cooperativa em apocalipse zumbi: coordene ações limitadas para conter ameaças em quatro zonas e selar o perímetro antes que o baralho de surtos termine.",
+    "minJogadores": 2,
+    "maxJogadores": 5,
+    "materiais": ["papel", "caneta"],
+    "mecanicasIds": ["contra-relogio", "gestao-recursos"],
+    "kit": {
+      "titulo": "Último Bunker",
+      "objetivo": "Selar todas as 4 Zonas da cidade antes que o monte de Recursos acabe ou uma Zona passe de 5 de Ameaça.",
+      "preparacao": [
+        "Anote as 4 Zonas (Hospital, Metrô, Porto, Torre), cada uma com 2 de Ameaça inicial.",
+        "Separe Recursos e Surtos em dois montes; distribua 3 cartas de Recurso para cada pessoa."
+      ],
+      "turno": [
+        "Faça até 2 ações: reduzir 1 de Ameaça em uma Zona, trocar 1 carta com um colega ou selar uma Zona.",
+        "Para selar uma Zona, ela precisa estar com 0 de Ameaça e você descarta 2 cartas da cor/local dela.",
+        "Compre 1 carta de Recurso (se o monte acabar antes das 4 selagens, o grupo perde).",
+        "Vire 1 carta de Surto e some Ameaça conforme o texto; passar de 5 causa derrota imediata."
+      ],
+      "fim": "Vencem ao selar as 4 Zonas; perdem se qualquer Zona passar de 5 ou o monte de Recursos esgotar.",
+      "cartas": [
+        { "nome": "Kit Médico (Hospital)", "papel": "Recurso", "texto": "Descarte para tirar 2 de Ameaça do Hospital ou junte 2 para selar essa Zona.", "quantidade": 5 },
+        { "nome": "Gerador (Torre)", "papel": "Recurso", "texto": "Descarte para tirar 2 de Ameaça da Torre ou junte 2 para selar essa Zona.", "quantidade": 5 },
+        { "nome": "Barricada (Metrô)", "papel": "Recurso", "texto": "Descarte para tirar 2 de Ameaça do Metrô ou junte 2 para selar essa Zona.", "quantidade": 5 },
+        { "nome": "Rádio de Resgate (Porto)", "papel": "Recurso", "texto": "Descarte para tirar 2 de Ameaça do Porto ou junte 2 para selar essa Zona.", "quantidade": 5 },
+        { "nome": "Sinalizador Tático", "papel": "Coringa", "texto": "Substitui qualquer carta para selar uma Zona ou cancela 1 carta de Surto.", "quantidade": 4 },
+        { "nome": "Horda Noturna", "papel": "Surto", "texto": "Adiciona +2 de Ameaça na Zona não selada com maior perigo atual.", "quantidade": 6 },
+        { "nome": "Alarme Quebrado", "papel": "Surto", "texto": "Adiciona +1 de Ameaça em todas as Zonas ainda abertas na mesa.", "quantidade": 4 }
+      ],
+      "rodada": [
+        "Ana limpa 2 de Ameaça no Hospital e entrega 1 Kit Médico para Bia.",
+        "Ana compra 1 Recurso e vira Horda Noturna (+2 no Porto, que sobe para 4).",
+        "Bia zera o Hospital e descarta 2 Kits Médicos para selar a 1ª Zona."
+      ],
+      "provocacao": "E se cada pessoa só pudesse agir dentro da Zona em que seu último turno terminou?"
+    }
+  },
+  {
+    "id": "cozinha-em-chamas",
+    "nome": "Cozinha em Chamas (roleta de panelas)",
+    "resumo": "Caos culinário de roleta russa: compre cartas tentando escapar das Panelas Explosivas escondidas no monte enquanto usa truques para empurrar o perigo ao próximo chef.",
+    "minJogadores": 2,
+    "maxJogadores": 6,
+    "materiais": ["papel"],
+    "mecanicasIds": ["contra-relogio", "gestao-recursos"],
+    "kit": {
+      "titulo": "Cozinha em Chamas",
+      "objetivo": "Ser o último chef de pé sem explodir com uma Panela Explosiva.",
+      "preparacao": [
+        "Separe Panelas Explosivas e Extintores do restante do baralho.",
+        "Distribua 3 cartas comuns para cada jogador e entregue 1 Extintor para cada pessoa.",
+        "Embaralhe 1 Panela Explosiva a menos que o número de pessoas dentro do monte."
+      ],
+      "turno": [
+        "Jogue quantas cartas da mão quiser (ou nenhuma) para atacar, espiar ou embaralhar o monte.",
+        "Encerre o turno comprando 1 carta do topo do monte.",
+        "Se comprar Panela Explosiva, só sobrevive descartando 1 Extintor (e devolve a Panela onde quiser no monte)."
+      ],
+      "fim": "Vence quem sobreviver por último na cozinha.",
+      "cartas": [
+        { "nome": "Panela Explosiva", "papel": "Perigo", "texto": "Se comprar e não tiver Extintor, você está eliminado da cozinha!", "quantidade": 5 },
+        { "nome": "Extintor de Espuma", "papel": "Defesa", "texto": "Anula uma Panela Explosiva e permite escondê-la em qualquer lugar do monte.", "quantidade": 6 },
+        { "nome": "Espiar o Forno", "papel": "Informação", "texto": "Olhe em segredo as 3 primeiras cartas do topo do monte sem mudar a ordem.", "quantidade": 5 },
+        { "nome": "Passar o Avental", "papel": "Evasão", "texto": "Encerre seu turno imediatamente sem precisar comprar carta do monte.", "quantidade": 5 },
+        { "nome": "Ordem do Chef", "papel": "Ataque", "texto": "Pule sua compra e obrigue o próximo jogador a jogar 2 turnos seguidos.", "quantidade": 4 },
+        { "nome": "Bater a Massa", "papel": "Caos", "texto": "Embaralhe todo o monte de compras imediatamente.", "quantidade": 5 },
+        { "nome": "Batedeira Turbinada", "papel": "Combo", "texto": "Descarte 2 cartas iguais para roubar 1 carta aleatória da mão de um rival.", "quantidade": 5 }
+      ],
+      "rodada": [
+        "Ana usa Espiar o Forno e vê uma Panela Explosiva no topo.",
+        "Ana joga Ordem do Chef e passa a bomba para Bia comprar.",
+        "Bia tira a Panela, gasta seu Extintor e a esconde em 2º lugar no monte."
+      ],
+      "provocacao": "E se o monte pudesse ser comprado tanto de cima quanto de baixo para fugir de armadilhas?"
+    }
+  },
+  {
+    "id": "motim-no-conves",
+    "nome": "Motim no Convés (papéis e alcance)",
+    "resumo": "Tiroteio pirata com papéis secretos e distância física na mesa: o Capitão revelado luta para sobreviver enquanto Rebeldes e um Corsário solitário preparam o bote.",
+    "minJogadores": 4,
+    "maxJogadores": 7,
+    "materiais": ["papel", "caneta"],
+    "mecanicasIds": ["papeis-secretos", "blefe"],
+    "kit": {
+      "titulo": "Motim no Convés",
+      "objetivo": "Cumprir a meta secreta do seu Papel (Capitão e Imediato protegem o comando; Rebeldes derrubam o Capitão).",
+      "preparacao": [
+        "Entregue 1 Papel por pessoa (1 Capitão revelado, 1 Imediato, 1 Corsário e o resto Rebeldes).",
+        "Anote 4 vidas (5 para o Capitão) e distribua 3 cartas de Ação para cada jogador."
+      ],
+      "turno": [
+        "Compre 2 cartas de Ação do monte.",
+        "Jogue 1 Disparo contra alguém a até 1 assento de distância (ou mais longe se tiver Luneta/Mosquete).",
+        "Use quantas cartas de Rum ou Equipamento desejar e descarte até seu total atual de vidas."
+      ],
+      "fim": "Rebeldes vencem se o Capitão cair; Capitão e Imediato vencem se restarem só os dois; Corsário vence se sobrar sozinho.",
+      "cartas": [
+        { "nome": "Capitão (Público)", "papel": "Papel", "texto": "Começa revelado com 5 vidas. Vence eliminando Rebeldes e Corsário.", "quantidade": 1 },
+        { "nome": "Imediato (Oculto)", "papel": "Papel", "texto": "Ajuda o Capitão nas sombras; vence junto mesmo se cair antes.", "quantidade": 1 },
+        { "nome": "Pirata Rebelde (Oculto)", "papel": "Papel", "texto": "Vence assim que o Capitão for reduzido a 0 vidas.", "quantidade": 4 },
+        { "nome": "Corsário Solitário (Oculto)", "papel": "Papel", "texto": "Finge ajudar quem está perdendo: só vence se for o último sobrevivente.", "quantidade": 1 },
+        { "nome": "Disparo de Pistola", "papel": "Ataque", "texto": "Tira 1 vida de um alvo dentro do seu alcance. Limite de 1 por turno.", "quantidade": 12 },
+        { "nome": "Esquiva Rápida", "papel": "Reação", "texto": "Descarte fora do seu turno para anular um Disparo contra você.", "quantidade": 8 },
+        { "nome": "Garrafa de Rum", "papel": "Cura", "texto": "Recupera 1 vida (ou salva você na hora ao chegar a 0 vidas).", "quantidade": 5 },
+        { "nome": "Luneta e Mosquete", "papel": "Equipamento", "texto": "Fica na sua frente: aumenta seu alcance de disparo em +1 assento na roda.", "quantidade": 5 }
+      ],
+      "rodada": [
+        "Ana (Capitão) atira em Caio à sua direita; Caio usa Esquiva Rápida.",
+        "Bia equipa Luneta e atira em Duda a 2 assentos de distância.",
+        "Duda fica com 0 vidas, mas descarta Garrafa de Rum para sobreviver."
+      ],
+      "provocacao": "E se eliminar um pirata permitisse roubar o Papel secreto dele caso ainda não estivesse revelado?"
+    }
+  },
+  {
+    "id": "guerra-de-servidores",
+    "nome": "Guerra de Servidores (duelo de 3 setores)",
+    "resumo": "Duelo cyberpunk para 2 pessoas em 3 servidores simultâneos: jogue códigos abertos com efeitos táticos ou disfarce programas fechados e recue cedo para perder menos pontos.",
+    "minJogadores": 2,
+    "maxJogadores": 2,
+    "materiais": ["papel", "caneta"],
+    "mecanicasIds": ["controle-setores"],
+    "kit": {
+      "titulo": "Guerra de Servidores",
+      "objetivo": "Somar 8 pontos dominando ao menos 2 dos 3 Servidores ao fim das rodadas.",
+      "preparacao": [
+        "Anote 0 pontos para cada pessoa e alinhe os 3 Servidores entre vocês.",
+        "Embaralhe os 18 Programas e distribua 5 cartas para cada jogador."
+      ],
+      "turno": [
+        "Jogue 1 carta no seu lado de um Servidor: aberta (ativa o efeito) ou virada para baixo (vale 2 de força neutra).",
+        "Em vez de jogar, você pode Recuar: o oponente ganha só 2 pontos imediatos (em vez de 4 se perder no fim).",
+        "Quando ambos jogarem as 5 cartas, quem tiver mais força em 2 Servidores leva 4 pontos."
+      ],
+      "fim": "Vence quem atingir 8 pontos primeiro.",
+      "cartas": [
+        { "nome": "Servidor Banco", "papel": "Setor", "texto": "Zona central fixa. Quem somar mais força aqui ao fim da rodada domina o setor.", "quantidade": 1 },
+        { "nome": "Servidor Rede", "papel": "Setor", "texto": "Zona central fixa. Quem somar mais força aqui ao fim da rodada domina o setor.", "quantidade": 1 },
+        { "nome": "Servidor Núcleo", "papel": "Setor", "texto": "Zona central fixa. Quem somar mais força aqui ao fim da rodada domina o setor.", "quantidade": 1 },
+        { "nome": "Vírus Espião (1)", "papel": "Programa", "texto": "Força 1. Ao revelar, olhe 1 carta da mão rival ou vire 1 carta fechada dele.", "quantidade": 3 },
+        { "nome": "Firewall Duplo (2)", "papel": "Programa", "texto": "Força 2. Todas as suas cartas fechadas neste Servidor ganham +2 de força.", "quantidade": 3 },
+        { "nome": "Injeção de Código (3)", "papel": "Programa", "texto": "Força 3. Ao jogar, mova outra carta sua já na mesa para outro Servidor.", "quantidade": 3 },
+        { "nome": "Trojan Camuflado (4)", "papel": "Programa", "texto": "Força 4. Só pode ser jogada aberta se você já tiver uma carta neste Servidor.", "quantidade": 3 },
+        { "nome": "Overclock Central (5)", "papel": "Programa", "texto": "Força 5. Sem efeito especial, impõe pressão máxima na coluna.", "quantidade": 3 },
+        { "nome": "Corte de Energia (0)", "papel": "Programa", "texto": "Força 0. Cancela os efeitos de todas as cartas abertas neste Servidor.", "quantidade": 3 }
+      ],
+      "rodada": [
+        "Ana joga Firewall Duplo (2) aberto no Servidor Banco.",
+        "Bia baixa uma carta virada para baixo no Servidor Rede como blefe de força 2.",
+        "Na 4ª jogada, Ana percebe que perderá dois setores e Recua para ceder só 2 pontos."
+      ],
+      "provocacao": "E se o próprio vencedor de um Servidor pudesse trocá-lo de lugar com outro na rodada seguinte?"
+    }
+  },
+  {
+    "id": "corte-das-guildas",
+    "nome": "Corte das Guildas (maioria em distritos)",
+    "resumo": "Política medieval por quatro distritos da capital: baixe bandos da mesma cor ou profissão para marcar maioria antes que os três Dragões do monte encerrem a era.",
+    "minJogadores": 2,
+    "maxJogadores": 5,
+    "materiais": ["papel", "caneta"],
+    "mecanicasIds": ["controle-setores", "colecao-conjuntos"],
+    "kit": {
+      "titulo": "Corte das Guildas",
+      "objetivo": "Somar mais pontos controlando os 4 Distritos quando o 3º Dragão surgir.",
+      "preparacao": [
+        "Coloque os 4 Distritos abertos e prepare papel para marcar pontos de presença por Distrito.",
+        "Misture os 3 Dragões na metade inferior do monte de Guildas, abra 3 cartas no centro e distribua 2 cartas para cada jogador."
+      ],
+      "turno": [
+        "Escolha uma ação: comprar 1 carta (do centro ou do monte) OU baixar um bando combinando cor ou profissão.",
+        "Ao baixar um bando, escolha 1 carta como líder para usar o efeito e anote sua presença no Distrito da cor dela (1 por carta).",
+        "Descarte o bando baixado; Dragões revelados ficam visíveis na mesa."
+      ],
+      "fim": "Ao surgir o 3º Dragão, encerra na hora e quem liderar cada Distrito leva os pontos dele.",
+      "cartas": [
+        { "nome": "Distrito do Porto (Azul)", "papel": "Setor", "texto": "Vale 6 pontos para quem tiver mais influência aqui no fim (3 para o 2º).", "quantidade": 1 },
+        { "nome": "Distrito da Forja (Vermelho)", "papel": "Setor", "texto": "Vale 5 pontos para quem liderar aqui no fim (2 para o 2º lugar).", "quantidade": 1 },
+        { "nome": "Distrito da Praça (Verde)", "papel": "Setor", "texto": "Vale 4 pontos para quem tiver mais influência aqui no fim.", "quantidade": 1 },
+        { "nome": "Distrito da Cidadela (Ouro)", "papel": "Setor", "texto": "Vale 7 pontos para quem liderar aqui no fim (4 para o 2º lugar).", "quantidade": 1 },
+        { "nome": "Mercador (4 Cores)", "papel": "Guilda", "texto": "Efeito se liderar bando: compre 2 cartas extras do monte imediatamente.", "quantidade": 9 },
+        { "nome": "Bardo (4 Cores)", "papel": "Guilda", "texto": "Efeito se liderar bando: conte +1 carta extra no tamanho do bando.", "quantidade": 8 },
+        { "nome": "Espadachim (4 Cores)", "papel": "Guilda", "texto": "Efeito se liderar bando: jogue imediatamente mais 1 bando de até 2 cartas.", "quantidade": 8 },
+        { "nome": "Mensageiro (4 Cores)", "papel": "Guilda", "texto": "Efeito se liderar bando: anote a presença em qualquer Distrito à escolha.", "quantidade": 8 },
+        { "nome": "Dragão Real", "papel": "Cronômetro", "texto": "Revelado do monte, fica à vista. O 3º Dragão encerra o jogo na hora.", "quantidade": 3 }
+      ],
+      "rodada": [
+        "Ana baixa 3 Bardos de cores diferentes liderados pelo Bardo Azul (+4 no Porto).",
+        "Bia compra um Mercador Ouro do centro para juntar com seus outros dois Ouro.",
+        "Caio revela o 2º Dragão Real do monte e acelera a disputa pela Cidadela."
+      ],
+      "provocacao": "E se o tamanho de cada bando baixado exigisse superar o tamanho do último bando jogado por você?"
+    }
+  },
+  {
+    "id": "mergulho-abissal",
+    "nome": "Mergulho Abissal (vazas cooperativas)",
+    "resumo": "Missão submarina cooperativa: joguem vazas em silêncio absoluto sobre suas cartas, cumprindo contratos que definem quem deve capturar exatamente cada carta-alvo.",
+    "minJogadores": 3,
+    "maxJogadores": 5,
+    "materiais": ["papel"],
+    "mecanicasIds": ["vazas", "comunicacao-limitada"],
+    "kit": {
+      "titulo": "Mergulho Abissal",
+      "objetivo": "Cumprir todos os Contratos da mesa em uma única rodada de vazas cooperativas.",
+      "preparacao": [
+        "Embaralhe os naipes Coral, Fossa, Abismo e os Submarinos; distribua 5 cartas para cada jogador.",
+        "Abra 3 Contratos na mesa e quem tiver o Submarino 3 escolhe quem fica com cada Contrato."
+      ],
+      "turno": [
+        "Quem começa joga 1 carta qualquer; os demais precisam seguir o mesmo naipe se tiverem.",
+        "Vence a vaza o maior Submarino jogado ou a maior carta do naipe inicial.",
+        "Proibido falar sobre sua mão; cada pessoa pode virar 1 vez uma carta na frente indicando só se ela é a maior, menor ou única daquele naipe."
+      ],
+      "fim": "Se cada Contrato for vencido na vaza certa pela pessoa designada até o fim das mãos, o grupo vence.",
+      "cartas": [
+        { "nome": "Coral Azul (1 a 6)", "papel": "Naipe", "texto": "Naipe comum de águas médias. Perde para cartas de Submarino.", "quantidade": 8 },
+        { "nome": "Fossa Verde (1 a 6)", "papel": "Naipe", "texto": "Naipe comum de corrente forte. Perde para cartas de Submarino.", "quantidade": 8 },
+        { "nome": "Abismo Âmbar (1 a 6)", "papel": "Naipe", "texto": "Naipe comum de águas profundas. Perde para cartas de Submarino.", "quantidade": 7 },
+        { "nome": "Submarino (Trunfo 1-3)", "papel": "Trunfo", "texto": "Supera qualquer naipe quando você não tiver cartas do naipe puxado.", "quantidade": 3 },
+        { "nome": "Contrato de Captura", "papel": "Missão", "texto": "Indica uma carta específica que seu portador precisa vencer dentro de uma vaza.", "quantidade": 4 },
+        { "nome": "Contrato de Ordem", "papel": "Missão", "texto": "Exige que este Contrato seja cumprido antes de todos os outros da mesa.", "quantidade": 2 }
+      ],
+      "rodada": [
+        "Ana sinaliza que Coral Azul 6 é sua única carta azul.",
+        "Bia puxa Coral Azul 2 sabendo que Ana não poderá seguir depois.",
+        "Caio corta a vaza seguinte com Submarino 1 para capturar o Contrato de Ordem."
+      ],
+      "provocacao": "E se vencer uma vaza sem Contrato ativo obrigasse o ganhador a passar uma carta fechada para a esquerda?"
+    }
+  },
+  {
+    "id": "codigo-interceptado",
+    "nome": "Código Interceptado (espionagem em equipes)",
+    "resumo": "Espionagem em duas equipes rivais: transmita sequências secretas de três palavras-chave aos aliados antes que o time adversário decifre e intercepte seu código.",
+    "minJogadores": 4,
+    "maxJogadores": 8,
+    "materiais": ["papel", "caneta"],
+    "mecanicasIds": ["comunicacao-limitada", "papeis-secretos"],
+    "kit": {
+      "titulo": "Código Interceptado",
+      "objetivo": "Conquistar 2 Selos de Interceptação decifrando o time rival (ou evitar 2 Falhas de Comunicação).",
+      "preparacao": [
+        "Dividam-se em 2 equipes; cada time sorteia 4 palavras numeradas de 1 a 4 visíveis só para seu grupo.",
+        "Entregue os montes de Código e as fichas de Pista Escrita para os dois lados."
+      ],
+      "turno": [
+        "Cada Transmissor pega 1 carta de Código secreta (3 números de 1 a 4) e anota 3 pistas de uma palavra ligadas às palavras de seu time.",
+        "A própria equipe discute e tenta adivinhar a sequência; da 2ª rodada em diante, o time rival também tenta interceptar!",
+        "Acertar o código rival dá 1 Selo de Interceptação; errar o próprio código gera 1 Falha de Comunicação.",
+        "O cargo de Transmissor gira dentro de cada time."
+      ],
+      "fim": "Vence quem somar 2 Selos de Interceptação primeiro (ou se o rival cometer 2 Falhas).",
+      "cartas": [
+        { "nome": "Palavra-Chave Base", "papel": "Referência", "texto": "Traz palavras concretas (ex.: Âncora, Farol, Relógio, Sombra) para numerar de 1 a 4.", "quantidade": 8 },
+        { "nome": "Código Triplo Fácil", "papel": "Código", "texto": "Sequência secreta de 3 números (ex.: 2-4-1) para o Transmissor cifrar.", "quantidade": 8 },
+        { "nome": "Código Triplo Tenso", "papel": "Código", "texto": "Sequência com saltos parecidos (ex.: 4-1-3) que exige pistas mais sutis.", "quantidade": 6 },
+        { "nome": "Registro de Pistas", "papel": "Registro", "texto": "Espaço para anotar as 3 pistas faladas, ficando exposto para a equipe rival estudar.", "quantidade": 4 },
+        { "nome": "Selo de Interceptação", "papel": "Ponto", "texto": "Recebido ao decifrar o código de 3 dígitos do time adversário.", "quantidade": 3 },
+        { "nome": "Falha de Comunicação", "papel": "Penalidade", "texto": "Recebido quando sua própria equipe erra o código enviado por você.", "quantidade": 3 }
+      ],
+      "rodada": [
+        "Ana (Time A) pega 2-4-1 para Farol, Sombra, Âncora e diz: \"noite, breu, ferro\".",
+        "Time A acerta 2-4-1, mas Time B anota as pistas tentando mapear a palavra 4.",
+        "Na 2ª rodada, Time B ouve \"madrugada\" e intercepta o número 4, ganhando 1 Selo!"
+      ],
+      "provocacao": "E se uma vez por partida o Transmissor pudesse trocar a posição de duas palavras secretas para confundir espiões?"
+    }
+  },
+  {
+    "id": "caravana-das-especiarias",
+    "nome": "Caravana das Especiarias (mão fixa e escambo)",
+    "resumo": "Comércio intenso na Rota da Seda com uma regra implacável: é proibido mudar a ordem das cartas na mão, forçando trocas desesperadas para formar lotes lucrativos.",
+    "minJogadores": 3,
+    "maxJogadores": 6,
+    "materiais": ["papel", "caneta"],
+    "mecanicasIds": ["negociacao", "colecao-conjuntos"],
+    "kit": {
+      "titulo": "Caravana das Especiarias",
+      "objetivo": "Acumular mais moedas vendendo conjuntos puros de Especiarias antes que o monte esgote.",
+      "preparacao": [
+        "Anote 0 moedas para cada pessoa; cada um tem espaço para 2 Lotes na mesa.",
+        "Distribua 4 cartas para cada jogador — proibido reordenar sua mão durante toda a partida!"
+      ],
+      "turno": [
+        "Jogue obrigatoriamente a 1ª carta da frente da sua mão em um dos seus Lotes (se não combinar, venda um Lote antes).",
+        "Vire 2 cartas do monte na mesa e negocie livremente com qualquer pessoa (cartas recebidas em troca entram direto nos seus Lotes).",
+        "Ao vender um Lote, anote as moedas da tabela e descarte as cartas; compre 2 cartas e ponha no fim da mão."
+      ],
+      "fim": "Quando o monte acabar pela 2ª vez, vendam todos os Lotes e vence quem tiver mais moedas.",
+      "cartas": [
+        { "nome": "Pimenta-do-Reino", "papel": "Especiaria", "texto": "Comum. Venda 3 cartas por 1 moeda, 5 por 2 moedas ou 7 por 3 moedas.", "quantidade": 9 },
+        { "nome": "Canela Dourada", "papel": "Especiaria", "texto": "Popular. Venda 2 cartas por 1 moeda, 4 por 2 moedas ou 6 por 3 moedas.", "quantidade": 8 },
+        { "nome": "Cardamomo Verde", "papel": "Especiaria", "texto": "Média. Venda 2 cartas por 1 moeda, 3 por 2 moedas ou 5 por 3 moedas.", "quantidade": 7 },
+        { "nome": "Cravo Imperial", "papel": "Especiaria", "texto": "Escassa. Venda 2 cartas por 2 moedas ou 4 por 3 moedas.", "quantidade": 6 },
+        { "nome": "Açafrão Raro", "papel": "Especiaria", "texto": "Valiosa! Venda 2 cartas por 3 moedas ou 3 por 4 moedas.", "quantidade": 4 },
+        { "nome": "Licença de 3º Lote", "papel": "Melhoria", "texto": "Pague 3 moedas para abrir um 3º espaço de Lote na sua mesa até o fim do jogo.", "quantidade": 6 }
+      ],
+      "rodada": [
+        "Ana é obrigada a jogar sua 1ª carta (Canela); ela tinha Pimenta e Cardamomo e vende Pimenta antes.",
+        "Ana vira Cravo e Açafrão do monte; oferece o Cravo para Bia em troca da Canela que trava a mão de Bia.",
+        "Bia aceita e ambas plantam imediatamente em seus Lotes."
+      ],
+      "provocacao": "E se fosse possível pagar 1 moeda para mover uma única carta da frente para o fim da mão?"
+    }
+  },
+  {
+    "id": "galeria-dos-exageros",
+    "nome": "Galeria dos Exageros (leilão com eliminação)",
+    "resumo": "Mecenas excêntricos disputam obras de arte surreais com orçamento secreto — mas no fim da noite, quem tiver sobrado com menos créditos é eliminado antes dos pontos.",
+    "minJogadores": 3,
+    "maxJogadores": 6,
+    "materiais": ["papel", "caneta"],
+    "mecanicasIds": ["leilao", "blefe"],
+    "kit": {
+      "titulo": "Galeria dos Exageros",
+      "objetivo": "Somar o maior prestígio em Obras sem terminar a noite com a menor reserva de créditos.",
+      "preparacao": [
+        "Cada jogador anota 25 créditos no próprio papel e mantém esse saldo escondido.",
+        "Embaralhe Obras, Multiplicadores e Escândalos no monte central."
+      ],
+      "turno": [
+        "Vire 1 carta do monte no centro da mesa.",
+        "Se for Obra ou Multiplicador, deem lances crescentes anotando os gastos ao vencer ou passem para sair da disputa.",
+        "Se for Escândalo, quem der lance maior foge sem pagar; o primeiro a passar ou o último que restar leva a carta.",
+        "Ao revelar a 4ª carta de Borda Escura, a partida termina imediatamente."
+      ],
+      "fim": "Todos revelam seus saldos: o jogador com menos créditos é eliminado na hora; vence o maior prestígio restante.",
+      "cartas": [
+        { "nome": "Escultura Invisível", "papel": "Obra", "texto": "Prestígio 2 a 4. Leiloada pelo maior lance aberto.", "quantidade": 4 },
+        { "nome": "Retrato de Gato Real", "papel": "Obra", "texto": "Prestígio 5 a 7. Obra média muito disputada no início.", "quantidade": 4 },
+        { "nome": "Cadeira Flutuante", "papel": "Obra", "texto": "Prestígio 8 a 10. Peça de destaque que drena saldos rápido.", "quantidade": 4 },
+        { "nome": "Leilão VIP (Borda Escura)", "papel": "Multiplicador", "texto": "Dobra todo o seu prestígio somado ao final da partida!", "quantidade": 3 },
+        { "nome": "Crítico Furioso (Borda Escura)", "papel": "Escândalo", "texto": "Leilão reverso: quem não pagar para escapar perde 5 pontos de prestígio.", "quantidade": 2 },
+        { "nome": "Restauração Desastrosa", "papel": "Escândalo", "texto": "Leilão reverso: quem pegar precisa descartar sua Obra mais recente.", "quantidade": 3 },
+        { "nome": "Regra do Mecenas", "papel": "Referência", "texto": "Lembrete na mesa: o menor saldo restante é desclassificado antes da pontuação.", "quantidade": 2 }
+      ],
+      "rodada": [
+        "Ana abre lance de 4 créditos pela Cadeira Flutuante (10); Bia sobe para 7 e leva.",
+        "Sai Crítico Furioso: Ana oferece 2 créditos para fugir e Caio aceita levar o Escândalo para poupar dinheiro.",
+        "Sai a 4ª Borda Escura: Bia tem mais pontos, mas só 2 créditos e é eliminada!"
+      ],
+      "provocacao": "E se o segundo menor saldo perdesse metade dos pontos em vez de escapar ileso?"
+    }
+  },
+  {
+    "id": "exploradores-do-abismo",
+    "nome": "Exploradores do Abismo (forçar a sorte)",
+    "resumo": "Expedição simultânea a cavernas amaldiçoadas: decida em segredo se avança mais fundo por relíquias e bônus no dado ou se foge para o acampamento antes do colapso.",
+    "minJogadores": 2,
+    "maxJogadores": 6,
+    "materiais": ["papel", "caneta", "dado"],
+    "mecanicasIds": ["forcar-sorte"],
+    "kit": {
+      "titulo": "Exploradores do Abismo",
+      "objetivo": "Acumular mais tesouros no baú seguro após 4 expedições pela caverna.",
+      "preparacao": [
+        "Anote 0 pontos no baú seguro de cada pessoa e deixe espaço para saque temporário.",
+        "Embaralhe todo o baralho de Caverna no centro."
+      ],
+      "turno": [
+        "Quem segue na caverna escolhe em segredo (mão aberta ou fechada): Avançar ou Voltar ao acampamento.",
+        "Quem Voltar salva todo seu saque temporário no baú seguro e divide eventuais Ídolos deixados na trilha.",
+        "Vire 1 carta: se for Tesouro, divida igualmente pelos que avançaram; se repetir uma Armadilha, todos dentro perdem o saque da rodada.",
+        "Uma vez por expedição, quem ficou pode rolar o dado para tentar dobrar o próximo Tesouro (4–6 dobra; 1–2 gera armadilha extra!)."
+      ],
+      "fim": "Após 4 expedições, vence quem tiver o maior total no baú seguro.",
+      "cartas": [
+        { "nome": "Câmara de Rubis", "papel": "Tesouro", "texto": "Vale de 4 a 9 moedas divididas igualmente entre quem seguiu na caverna.", "quantidade": 6 },
+        { "nome": "Ídolo Esquecido", "papel": "Tesouro", "texto": "Vale 10 pontos inteiros — só vai para quem voltar sozinho em uma rodada!", "quantidade": 4 },
+        { "nome": "Desabamento", "papel": "Armadilha", "texto": "Perigo tipo Pedra. A 2ª cópia nesta descida apaga o saque temporário de todos.", "quantidade": 4 },
+        { "nome": "Gás Tóxico", "papel": "Armadilha", "texto": "Perigo tipo Gás. A 2ª cópia nesta descida encerra a expedição sem saque.", "quantidade": 4 },
+        { "nome": "Enxame de Escorpiões", "papel": "Armadilha", "texto": "Perigo tipo Veneno. A 2ª cópia nesta descida faz quem ficou perder tudo.", "quantidade": 4 },
+        { "nome": "Corda de Emergência", "papel": "Bônus", "texto": "Permite fugir com metade do saque temporário mesmo após uma 2ª Armadilha.", "quantidade": 5 },
+        { "nome": "Tocha Dupla", "papel": "Bônus", "texto": "Permite rerrolar o dado de Risco uma vez por expedição.", "quantidade": 5 }
+      ],
+      "rodada": [
+        "Ana, Bia e Caio avançam e dividem 9 moedas (3 cada).",
+        "Caio decide Voltar e salva 3 pontos; Ana rola o dado e tira 5 (dobra o próximo tesouro!).",
+        "A carta seguinte é o 2º Desabamento: Ana e Bia saem de mãos vazias."
+      ],
+      "provocacao": "E se quem voltasse primeiro pudesse bloquear uma saída e cobrar 1 moeda de pedágio dos atrasados?"
+    }
+  },
+  {
+    "id": "arquiteto-de-bolso",
+    "nome": "Arquiteto de Bolso (rolar e escrever urbano)",
+    "resumo": "Urbanismo ecológico em papel quadriculado: uma carta de Projeto e um dado compartilhado guiam cada pessoa a desenhar seu próprio bairro 3x3 cumprindo metas verdes.",
+    "minJogadores": 1,
+    "maxJogadores": 8,
+    "materiais": ["papel", "caneta", "dado"],
+    "mecanicasIds": ["rolar-escrever"],
+    "kit": {
+      "titulo": "Arquiteto de Bolso",
+      "objetivo": "Somar mais pontos em sua grade 3x3 combinando Projetos, números crescentes e Metas verdes.",
+      "preparacao": [
+        "Desenhe uma grade 3x3 vazia no papel e abra 2 cartas de Meta visíveis no centro.",
+        "Embaralhe as cartas de Projeto no monte."
+      ],
+      "turno": [
+        "Vire 1 carta de Projeto do monte e role 1 dado compartilhado para a mesa.",
+        "Cada participante anota o símbolo do Projeto com o número do dado em 1 casa vazia da sua grade 3x3 (ou marca 1 multa de -2 pontos).",
+        "Ao fim de 9 turnos, some pontos por números em ordem crescente nas linhas, bônus dos Projetos e as 2 Metas."
+      ],
+      "fim": "Após 9 rodadas, vence a maior pontuação final (no modo solo, tente passar de 25 pontos).",
+      "cartas": [
+        { "nome": "Parque Linear (P)", "papel": "Projeto", "texto": "Anote \"P\" + dado. Vale +2 pontos por cada Moradia vizinha no fim.", "quantidade": 5 },
+        { "nome": "Moradia Solar (M)", "papel": "Projeto", "texto": "Anote \"M\" + dado. Linhas em ordem crescente ganham +4 pontos extras.", "quantidade": 5 },
+        { "nome": "Ciclovia Central (C)", "papel": "Projeto", "texto": "Anote \"C\" + dado. Vale +5 se ligar duas bordas opostas da grade.", "quantidade": 4 },
+        { "nome": "Mercado Local (L)", "papel": "Projeto", "texto": "Anote \"L\" + dado. Vale +3 por cada tipo diferente de símbolo vizinho.", "quantidade": 4 },
+        { "nome": "Obra Imprevista", "papel": "Evento", "texto": "Role o dado duas vezes e escolha qualquer um dos dois valores para anotar.", "quantidade": 3 },
+        { "nome": "Meta: Cidade Verde", "papel": "Objetivo", "texto": "+5 pontos se houver pelo menos 3 Parques em colunas diferentes.", "quantidade": 3 },
+        { "nome": "Meta: Eixo Conectado", "papel": "Objetivo", "texto": "+6 pontos se todas as Ciclovias formarem uma trilha contínua sem quebras.", "quantidade": 2 }
+      ],
+      "rodada": [
+        "Vira Parque Linear e o dado rola 4.",
+        "Ana anota P4 no centro para cercar de Moradias; Bia anota P4 no canto.",
+        "Na rodada seguinte, Obra Imprevista dá opções 2 e 6 para destravar uma linha."
+      ],
+      "provocacao": "E se o jogador que fechasse uma linha primeiro pudesse bloquear o próximo número do dado para os vizinhos?"
+    }
+  },
+  {
+    "id": "roteiro-surreal",
+    "nome": "Roteiro Surreal (narrativa e corte)",
+    "resumo": "Improviso de cinema B: roteiristas encadeiam cenas bizarras usando cartas da mão, interrompem clichês alheios e disputam o controle para chegar ao seu Final Secreto.",
+    "minJogadores": 3,
+    "maxJogadores": 6,
+    "materiais": ["papel"],
+    "mecanicasIds": ["draft", "blefe"],
+    "kit": {
+      "titulo": "Roteiro Surreal",
+      "objetivo": "Esvaziar a mão de Elementos e narrar seu Final Secreto de forma convincente.",
+      "preparacao": [
+        "Entregue 1 carta de Final Secreto fechada para cada pessoa.",
+        "Embaralhe os Elementos e Cortes e distribua 4 cartas para cada jogador."
+      ],
+      "turno": [
+        "O Diretor da vez narra 2 frases da história encaixando ao menos 1 carta de Elemento da mão e descarta-a na mesa.",
+        "Se um rival ouvir exatamente o tema de uma carta dele ou tiver um Corte do Produtor, pode interromper e assumir a narração!",
+        "Se passar a vez por falta de encaixe, compre 1 carta entre 2 abertas na mesa (e passe a restante ao vizinho se tiver mais de 4)."
+      ],
+      "fim": "Vence quem esvaziar a mão e encaixar seu Final Secreto sem veto unânime da mesa.",
+      "cartas": [
+        { "nome": "Objeto Bizarro", "papel": "Elemento", "texto": "Ex.: Maleta que mia ou Relógio reverso. Cite na cena para baixar.", "quantidade": 8 },
+        { "nome": "Reviravolta Absurda", "papel": "Elemento", "texto": "Ex.: Era tudo um comercial; O vilão é o síndico. Mude o rumo.", "quantidade": 7 },
+        { "nome": "Cenário Caótico", "papel": "Elemento", "texto": "Ex.: Elevador em queda ou Praia radioativa. Leve a cena até lá.", "quantidade": 7 },
+        { "nome": "Figura Duvidosa", "papel": "Elemento", "texto": "Ex.: Astronauta aposentado ou Estagiário ninja. Insira na trama.", "quantidade": 6 },
+        { "nome": "Corte do Produtor!", "papel": "Interrupção", "texto": "Jogue a qualquer hora quando alguém repetir clichê para roubar a fala.", "quantidade": 4 },
+        { "nome": "Final Trágico", "papel": "Final Secreto", "texto": "Encerre provando que ninguém escapou ou tudo voltou à estaca zero.", "quantidade": 3 },
+        { "nome": "Final Feliz Improvável", "papel": "Final Secreto", "texto": "Encerre com rivais resolvendo a crise em paz ou abrindo uma padaria.", "quantidade": 3 }
+      ],
+      "rodada": [
+        "Ana abre narrando um Elevador em queda onde um Estagiário ninja segura uma maleta.",
+        "Bia ouve \"maleta\", joga Objeto Bizarro e assume a cena dizendo que a maleta mia!",
+        "Caio tenta encerrar com Final Trágico, mas ainda tinha 1 carta na mão e precisa esperar."
+      ],
+      "provocacao": "E se o grupo pudesse votar em 1 palavra proibida por cena antes de cada narrador começar?"
+    }
+  },
+  {
+    "id": "ritmo-oculto",
+    "nome": "Ritmo Oculto (sincronia sem turnos)",
+    "resumo": "Experiência cooperativa quase telepática: sem turnos nem fala, o grupo precisa jogar cartas numeradas de 1 a 38 em ordem crescente lendo apenas o silêncio da mesa.",
+    "minJogadores": 2,
+    "maxJogadores": 4,
+    "materiais": ["papel", "caneta"],
+    "mecanicasIds": ["contra-relogio", "comunicacao-limitada"],
+    "kit": {
+      "titulo": "Ritmo Oculto",
+      "objetivo": "Vencer os 5 Níveis jogando todas as cartas em ordem crescente antes que as 3 Vidas acabem.",
+      "preparacao": [
+        "Anote 3 Vidas, 1 Pulso de Calibração e Nível 1 no papel.",
+        "Embaralhe as 38 cartas numeradas e dê a cada jogador tantas cartas quanto o Nível atual (1 no Nível 1, até 5 no Nível 5)."
+      ],
+      "turno": [
+        "Todos encostam uma mão na mesa para se concentrar e retiram em silêncio para iniciar.",
+        "Sem ordem de turno e sem falar nada, joguem suas cartas no centro em ordem estritamente crescente.",
+        "Se alguém jogar um número maior enquanto um colega ainda segura um menor, perdem 1 Vida e descartam todas as cartas menores."
+      ],
+      "fim": "Vencem ao completar o Nível 5 com ao menos 1 Vida; se as Vidas chegarem a 0, todos perdem.",
+      "cartas": [
+        { "nome": "Número Baixo (1 a 9)", "papel": "Sequência", "texto": "Costuma abrir a rodada cedo — segure apenas alguns instantes perto do 9.", "quantidade": 9 },
+        { "nome": "Número Médio-Baixo (10 a 19)", "papel": "Sequência", "texto": "Zona de atenção: sinta a pausa da mesa antes de baixar.", "quantidade": 10 },
+        { "nome": "Número Médio-Alto (20 a 29)", "papel": "Sequência", "texto": "Espere o ritmo desacelerar após a metade da rodada antes de soltar.", "quantidade": 10 },
+        { "nome": "Número Alto (30 a 38)", "papel": "Sequência", "texto": "Guarde para a reta final; atenção a saltos grandes perto de 38.", "quantidade": 9 },
+        { "nome": "Pulso de Calibração", "papel": "Apoio", "texto": "Se todos levantarem a mão juntos em silêncio, cada um descarta sua menor carta.", "quantidade": 1 },
+        { "nome": "Marcador de Nível", "papel": "Referência", "texto": "Lembra a escala: 1 carta por pessoa no Nível 1 até 5 no Nível 5.", "quantidade": 1 }
+      ],
+      "rodada": [
+        "No Nível 3, Ana espera 3 segundos e joga 6; Bia joga 11 logo em seguida.",
+        "Caio hesita com 14 na mão enquanto Ana solta 17.",
+        "Caio abaixa o 14 revelando o erro: perdem 1 Vida, mas continuam até fechar o Nível."
+      ],
+      "provocacao": "E se o grupo tivesse que bater cada carta em silêncio com os olhos vendados depois do Nível 3?"
+    }
+  },
+  {
+    "id": "caldeirao-alquimico",
+    "nome": "Caldeirão Alquímico (combos no papel)",
+    "resumo": "Alquimia de reações em cadeia: role os resultados no dado, combine com uma carta de Ingrediente aberta para marcar sua ficha e deixe as sobras para os rivais.",
+    "minJogadores": 1,
+    "maxJogadores": 6,
+    "materiais": ["papel", "caneta", "dado"],
+    "mecanicasIds": ["rolar-escrever", "gestao-recursos"],
+    "kit": {
+      "titulo": "Caldeirão Alquímico",
+      "objetivo": "Somar mais pontos em 6 rodadas preenchendo trilhas de alquimia e ativando combos em cadeia.",
+      "preparacao": [
+        "Desenhe 4 trilhas no papel: Fogo (1 a 6 em ordem), Ervas (pares), Cristais (soma) e Elixir (bônus).",
+        "Embaralhe as cartas de Ingrediente no centro."
+      ],
+      "turno": [
+        "Role o dado 2 vezes na sua vez e abra 3 cartas de Ingrediente na mesa.",
+        "Escolha 1 par (resultado do dado + Ingrediente aberto) para marcar na sua folha; cartas menores que a escolhida vão para a bandeja de sobra.",
+        "Em partidas em grupo, quem está esperando pode marcar 1 escolha usando o que sobrou na bandeja.",
+        "Fechar linhas libera marcações grátis em outras trilhas, criando combos."
+      ],
+      "fim": "Após 6 rodadas, vence quem somar mais pontos nas 4 trilhas (no modo solo, mire em 40 pontos).",
+      "cartas": [
+        { "nome": "Brasa Pura", "papel": "Ingrediente", "texto": "Anote o valor do dado na trilha de Fogo (sempre maior que o anterior).", "quantidade": 5 },
+        { "nome": "Raiz Lunar", "papel": "Ingrediente", "texto": "Marque na trilha de Ervas se o dado for par (ou gaste 1 Elixir para qualquer valor).", "quantidade": 5 },
+        { "nome": "Quartzo Líquido", "papel": "Ingrediente", "texto": "Anote o valor do dado na trilha de Cristais; cada 10 somados liberam 1 Elixir.", "quantidade": 5 },
+        { "nome": "Catalisador Raro", "papel": "Ingrediente", "texto": "Permite ajustar o valor do dado em +1 ou -1 nesta marcação.", "quantidade": 4 },
+        { "nome": "Frasco Instável", "papel": "Desafio", "texto": "Vale +4 pontos no fim se você tiver marcado ao menos 3 trilhas diferentes.", "quantidade": 4 },
+        { "nome": "Receita Mestra", "papel": "Bônus", "texto": "Libera uma marcação extra imediata na trilha com menos pontos.", "quantidade": 3 }
+      ],
+      "rodada": [
+        "Ana rola 4 e 2, escolhe 4 com Brasa Pura e marca Fogo, deixando 2 na bandeja.",
+        "Bia aproveita o 2 sobrado para marcar Raiz Lunar na trilha de Ervas.",
+        "Ao fechar a linha de Ervas, Bia libera um bônus que marca Cristais em cadeia!"
+      ],
+      "provocacao": "E se usar uma sobra do rival obrigasse você a ceder 1 ponto de sua maior trilha para ele?"
     }
   }
 ]
