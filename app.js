@@ -1,6 +1,7 @@
 // Cola da tela única: estado, eventos e desenho. A lógica testável mora em src/.
 import { catalogo, mecanicaCompativel } from './src/mecanicas.js';
 import { materiaisExtras, combinarMateriais } from './src/materiais.js';
+import { normalizarJogadores, removerMecanicasIncompativeis, descreverFaixaJogadores } from './src/jogadores.js';
 import { MODELO_PADRAO, promptKit, promptRevisao, chamarLLM, chaveValida, AVISO_CHAVE } from './src/ia.js';
 import { validarKit } from './src/validador.js';
 
@@ -33,12 +34,11 @@ const FAMILIAS = {
 };
 
 function lerFormulario() {
-  const n = Number($('#jogadores').value) || 4;
   const fixos = [...document.querySelectorAll('input[name=material]:checked')].map(i => i.value);
   const extras = materiaisExtras($('#outro-material').value);
   return {
     tema: $('#tema').value.trim(),
-    jogadores: Math.min(8, Math.max(2, n)),
+    jogadores: normalizarJogadores($('#jogadores').value),
     duracao: Number($('#duracao').value) || 20,
     materiais: combinarMateriais(fixos, extras),
     dificuldade: document.querySelector('input[name=dificuldade]:checked')?.value || 'facil',
@@ -56,7 +56,7 @@ function motivoIncompativel(m) {
   const faltam = m.precisa.filter(p => !materiais.includes(p));
   if (faltam.length) return `precisa de ${faltam.join(' e ')}`;
   if (jogadores < m.minJogadores || jogadores > m.maxJogadores)
-    return `para ${m.minJogadores} a ${m.maxJogadores} jogadores`;
+    return `para ${descreverFaixaJogadores(m.minJogadores, m.maxJogadores)}`;
   return '';
 }
 
@@ -143,13 +143,29 @@ function alternarMecanica(m) {
 
 function podarSelecionadas() {
   const entrada = lerFormulario();
-  selecionadas = selecionadas.filter(m => mecanicaCompativel(m, entrada));
+  const { mantidas, removidas } = removerMecanicasIncompativeis(selecionadas, entrada);
+  selecionadas = mantidas;
+  return removidas;
 }
 
 function atualizarEntradaMecanicas() {
-  podarSelecionadas();
+  const removidas = podarSelecionadas();
   renderMecanicas();
   if ($('#catalogo').open) renderCatalogo();
+  if (removidas.length) {
+    const nomes = removidas.map(m => m.nome).join(', ');
+    const pessoas = lerFormulario().jogadores;
+    const msg = `Mecânica(s) removida(s) porque não combinam com ${pessoas} ${pessoas === 1 ? 'pessoa' : 'pessoas'} ou os materiais atuais: ${nomes}.`;
+    mostrarAviso(msg);
+    if ($('#catalogo').open) mostrarAvisoCatalogo(msg);
+  }
+}
+
+function sincronizarJogadores() {
+  const campo = $('#jogadores');
+  const normalizado = normalizarJogadores(campo.value);
+  if (String(normalizado) !== campo.value.trim()) campo.value = String(normalizado);
+  atualizarEntradaMecanicas();
 }
 
 function abrirCatalogo() {
@@ -177,7 +193,11 @@ $('#exemplo').addEventListener('click', () => {
 });
 
 $('#tema').addEventListener('input', ajustarTema);
-$('#jogadores').addEventListener('change', atualizarEntradaMecanicas);
+$('#jogadores').addEventListener('input', () => {
+  if ($('#jogadores').value.trim() !== '') atualizarEntradaMecanicas();
+});
+$('#jogadores').addEventListener('change', sincronizarJogadores);
+$('#jogadores').addEventListener('blur', sincronizarJogadores);
 document.querySelectorAll('input[name=material]').forEach(i => i.addEventListener('change', atualizarEntradaMecanicas));
 $('#outro-material').addEventListener('change', atualizarEntradaMecanicas);
 
