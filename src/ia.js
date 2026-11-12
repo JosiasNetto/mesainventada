@@ -12,8 +12,26 @@ export const chaveValida = chave => /^sk-or-v1-[A-Za-z0-9]{32,}$/.test(String(ch
 export const AVISO_CHAVE = 'Essa não parece uma chave completa da OpenRouter. Ela começa com "sk-or-v1-" e tem mais de 70 caracteres. '
   + 'O site só mostra a chave inteira uma vez, na hora de criar: se você copiou da lista de chaves, crie uma nova em openrouter.ai/keys e copie pelo botão de copiar.';
 
+export function orientacaoJogadores(jogadores) {
+  if (jogadores === 1) {
+    return 'Modo solo (1 jogador): defina condição clara de vitória/derrota contra o baralho ou relógio, sem trocas nem ações entre jogadores.';
+  }
+  if (jogadores === 2) {
+    return 'Para 2 jogadores: mantenha ritmo dinâmico em dupla, evitando regras de votação ou maioria que dependam de 3 ou mais pessoas.';
+  }
+  if (jogadores >= 6) {
+    const maxMao = Math.max(2, Math.floor(42 / jogadores));
+    return `Para ${jogadores} jogadores (mesa grande): distribua no máximo ${maxMao} cartas iniciais por pessoa para caber no baralho de até 54 cartas e evite turnos com espera longa.`;
+  }
+  return `Para ${jogadores} jogadores: garanta que a preparação e as cartas distribuídas caibam com folga no baralho de até 54 cartas.`;
+}
+
 function sistema(entrada) {
   const limite = LIMITE_TURNO[entrada.dificuldade] ?? 5;
+  const jogadores = Number(entrada.jogadores) || 4;
+  const regraRodada = jogadores === 1
+    ? '- "rodada": 3 a 6 passos simulando uma rodada de teste solo com valores concretos (ex.: "Ana rola o dado: 2").'
+    : `- "rodada": 3 a 6 passos simulando uma rodada de teste com jogadores nomeados coerentes com ${jogadores} participantes e valores concretos (ex.: "Ana rola o dado: 2").`;
   return `Você é co-designer de jogos de cartas curtos na ferramenta MesaInventada.
 Você propõe um protótipo revisável, não um jogo final equilibrado.
 Responda SOMENTE com um objeto JSON, sem nada fora dele, neste formato:
@@ -23,7 +41,7 @@ Regras:
 - Use só os materiais disponíveis. As cartas são de papel e só têm texto, sem imagens.
 - "turno": no máximo ${limite} passos.
 - "cartas": de 4 a 12 tipos; "texto" com até 120 caracteres; soma das "quantidade" até 54.
-- "rodada": 3 a 6 passos simulando uma rodada de teste, com jogadores nomeados e valores concretos (ex.: "Ana rola o dado: 2").
+${regraRodada}
 - "provocacao": uma pergunta que desafia uma suposição deste jogo (ex.: precisa haver um vencedor?).`;
 }
 
@@ -32,9 +50,11 @@ export function promptKit(entrada, mecanicas) {
   const cabecalho = mecanicas.length > 1
     ? 'Mecânicas escolhidas (combine todas num só jogo):'
     : 'Mecânica escolhida (construa o jogo em torno dela):';
+  const rotuloJogadores = `${jogadores} ${jogadores === 1 ? 'jogador' : 'jogadores'}`;
   const user = [
     `Tema: ${tema}`,
-    `${jogadores} jogadores · ${duracao} minutos · dificuldade ${dificuldade === 'medio' ? 'médio' : 'fácil'}`,
+    `${rotuloJogadores} · ${duracao} minutos · dificuldade ${dificuldade === 'medio' ? 'médio' : 'fácil'}`,
+    orientacaoJogadores(jogadores),
     `Materiais disponíveis: ${materiais.join(', ')}`,
     cabecalho,
     ...mecanicas.map(m => `- ${m.nome}: ${m.descricao}`),

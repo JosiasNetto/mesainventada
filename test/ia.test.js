@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MODELO_PADRAO, promptKit, promptRevisao, extrairJSON, mensagemDeErro, chamarLLM, chaveValida } from '../src/ia.js';
+import { MODELO_PADRAO, orientacaoJogadores, promptKit, promptRevisao, extrairJSON, mensagemDeErro, chamarLLM, chaveValida } from '../src/ia.js';
 import { catalogo } from '../src/mecanicas.js';
 import { kitExemplo, entradaExemplo } from './kit-exemplo.js';
 
@@ -91,4 +91,14 @@ test('promptKit aceita até cinco mecânicas e pede para combinar todas', () => 
   const t = texto(promptKit(entradaExemplo, cinco));
   assert.ok(t.includes('combine todas'));
   for (const m of cinco) assert.ok(t.includes(m.nome), m.nome);
+});
+
+test('orientacaoJogadores e promptKit adaptam instruções para solo, dupla e mesa grande', () => {
+  assert.match(orientacaoJogadores(1), /solo/i);
+  assert.match(orientacaoJogadores(2), /2 jogadores/);
+  assert.match(orientacaoJogadores(8), /mesa grande|54 cartas/);
+
+  const soloPrompt = texto(promptKit({ ...entradaExemplo, jogadores: 1 }, [catalogo[0]]));
+  assert.ok(soloPrompt.includes('1 jogador'));
+  assert.ok(soloPrompt.includes('rodada de teste solo'));
 });

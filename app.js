@@ -349,7 +349,7 @@ function renderKit(kit, alvo, editavel) {
 
 function renderTravas() {
   const v = versaoAtual();
-  const avisos = v ? validarKit(v.kit, v.entrada) : [];
+  const avisos = v ? validarKit(v.kit, v.entrada, v.mecanicas) : [];
   const ul = el('ul');
   avisos.forEach(a => ul.append(el('li', a)));
   const corrigir = el('button', 'Pedir à IA para corrigir', 'botao-secundario');
@@ -365,7 +365,7 @@ function renderTravas() {
 async function revisar(relato, botao) {
   const v = versaoAtual();
   if (!v || !chaveOuConfig()) return;
-  await gerar(promptRevisao(v.entrada, v.kit, relato, validarKit(v.kit, v.entrada)),
+  await gerar(promptRevisao(v.entrada, v.kit, relato, validarKit(v.kit, v.entrada, v.mecanicas)),
     { origem: 'revisado', entrada: v.entrada, mecanicas: v.mecanicas, relato }, botao);
   if (versaoAtual() !== v) { $('#relato').value = ''; $('#relato-box').hidden = true; }
 }

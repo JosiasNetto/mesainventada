@@ -2,7 +2,25 @@
 
 const LIMITE_TURNO = { facil: 3, medio: 5 };
 
-export function validarKit(kit, entrada) {
+const PADROES_DISTRIBUICAO = [
+  /(\d+)\s+cartas?\s+(?:para|a)\s+cada\s+(?:jogador|pessoa|participante)/gi,
+  /cada\s+(?:jogador|pessoa|participante)\s+(?:recebe|compra|pega|come[çc]a\s+com)\s+(\d+)\s+cartas?/gi,
+  /distribua\s+(\d+)\s+cartas?\s+(?:por|para\s+cada|a\s+cada)/gi,
+];
+
+function maiorDistribuicaoInicial(preparacao) {
+  const texto = preparacao.map(t => String(t ?? '')).join('\n');
+  let maxPorJogador = 0;
+  for (const padrao of PADROES_DISTRIBUICAO) {
+    for (const match of texto.matchAll(padrao)) {
+      const qtd = Number(match[1]);
+      if (qtd > maxPorJogador) maxPorJogador = qtd;
+    }
+  }
+  return maxPorJogador;
+}
+
+export function validarKit(kit, entrada, mecanicas = []) {
   const k = kit && typeof kit === 'object' ? kit : {};
   const avisos = [];
   const falta = campo => avisos.push(`Falta o campo "${campo}".`);
@@ -25,7 +43,32 @@ export function validarKit(kit, entrada) {
   }
 
   const lista = x => (Array.isArray(x) ? x : []);
-  const textos = [k.objetivo, ...lista(k.preparacao), ...turno, k.fim, ...lista(k.rodada), ...cartas.map(c => c.texto)]
+  const preparacao = lista(k.preparacao);
+  const jogadores = Number(entrada.jogadores) || 4;
+  const porPessoa = maiorDistribuicaoInicial(preparacao);
+  if (porPessoa > 0 && cartas.length > 0 && porPessoa * jogadores > total) {
+    avisos.push(
+      `A preparação distribui ${porPessoa} cartas por pessoa (${porPessoa * jogadores} para ${jogadores} jogadores), mas o baralho tem só ${total} cartas.`,
+    );
+  }
+
+  const textosRegras = [k.objetivo, ...preparacao, ...turno, k.fim].map(t => String(t ?? '')).join('\n');
+  if (jogadores === 1 && /\b(outro(?:s)? jogador(?:es)?|pr[oó]ximo jogador|cada jogador|entre jogadores|todos os jogadores|sentido hor[aá]rio)\b/i.test(textosRegras)) {
+    avisos.push('O jogo é para 1 jogador (solo), mas as regras citam outros jogadores.');
+  }
+  const citacaoJogadores = textosRegras.match(/\bpara\s+(\d+)\s+jogadores?\b/i);
+  if (citacaoJogadores && Number(citacaoJogadores[1]) >= 1 && Number(citacaoJogadores[1]) !== jogadores) {
+    avisos.push(`As regras citam ${citacaoJogadores[1]} jogadores, mas o jogo foi configurado para ${jogadores}.`);
+  }
+  if (Array.isArray(mecanicas)) {
+    for (const m of mecanicas) {
+      if (m && (jogadores < m.minJogadores || jogadores > m.maxJogadores)) {
+        avisos.push(`A mecânica "${m.nome}" funciona para ${m.minJogadores} a ${m.maxJogadores} jogadores, não para ${jogadores}.`);
+      }
+    }
+  }
+
+  const textos = [k.objetivo, ...preparacao, ...turno, k.fim, ...lista(k.rodada), ...cartas.map(c => c.texto)]
     .map(t => String(t ?? '')).join('\n');
   const materiais = entrada.materiais || [];
   if (!materiais.includes('dado') && /\bdados?\b/i.test(textos))
