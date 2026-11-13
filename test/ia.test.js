@@ -1,6 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MODELO_PADRAO, orientacaoJogadores, promptKit, promptComReferencias, promptRevisao, extrairJSON, mensagemDeErro, chamarLLM, chaveValida } from '../src/ia.js';
+import {
+  MODELO_PADRAO,
+  MODELO_IMAGEM_PADRAO,
+  orientacaoJogadores,
+  promptKit,
+  promptComReferencias,
+  promptRevisao,
+  promptImagemCarta,
+  extrairJSON,
+  extrairImagem,
+  mensagemDeErro,
+  chamarLLM,
+  chamarLLMComMetricas,
+  gerarImagemCarta,
+  chaveValida,
+} from '../src/ia.js';
 import { catalogo } from '../src/mecanicas.js';
 import { obterReferencia, referenciaDeTexto } from '../src/referencias.js';
 import { kitExemplo, entradaExemplo } from './kit-exemplo.js';
@@ -134,4 +149,80 @@ test('promptComReferencias monta prompts para novas cartas, novas regras e jogo 
   assert.ok(pInspirado.includes('JOGO NOVO'));
   assert.ok(pInspirado.includes('Truco'));
   assert.ok(pInspirado.includes('Regra da turma'));
+});
+
+test('promptImagemCarta descreve a carta, o tema do jogo e proíbe texto na imagem', () => {
+  const msgs = promptImagemCarta(
+    { nome: 'Tanque de Oxigênio', texto: 'Ganhe 2 de fôlego para a equipe.' },
+    kitExemplo,
+    entradaExemplo,
+  );
+  const t = texto(msgs);
+  assert.ok(t.includes('Tanque de Oxigênio'));
+  assert.ok(t.includes('Oxigênio Zero'));
+  assert.ok(t.includes('exploração espacial'));
+  assert.match(t, /sem texto|não escreva/i);
+});
+
+test('extrairImagem aceita formato images da OpenRouter e falha com aviso legível se ausente', () => {
+  const url = 'data:image/jpeg;base64,/9j/4AAQSkZJRg==';
+  assert.equal(
+    extrairImagem({ choices: [{ message: { images: [{ type: 'image_url', image_url: { url } }] } }] }),
+    url,
+  );
+  assert.throws(() => extrairImagem({ choices: [{ message: { content: 'sem imagem' } }] }), /não gerou uma imagem/i);
+});
+
+test('chamarLLMComMetricas devolve kit e métricas de tempo, tokens e custo', async () => {
+  globalThis.fetch = async () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({
+      model: MODELO_PADRAO,
+      usage: { prompt_tokens: 420, completion_tokens: 680, total_tokens: 1100, cost: 0.0004 },
+      choices: [{ message: { content: JSON.stringify(kitExemplo) } }],
+    }),
+  });
+  const res = await chamarLLMComMetricas({ chave: 'sk-or-x', modelo: MODELO_PADRAO, mensagens: [], semente: 7 });
+  assert.equal(res.kit.titulo, 'Oxigênio Zero');
+  assert.equal(res.metricas.promptTokens, 420);
+  assert.equal(res.metricas.completionTokens, 680);
+  assert.equal(res.metricas.totalTokens, 1100);
+  assert.equal(res.metricas.custoUsd, 0.0004);
+  assert.ok(res.metricas.duracaoMs >= 0);
+});
+
+test('gerarImagemCarta envia modalities com image e devolve imagemUrl e métricas', async () => {
+  let corpo;
+  const imgFake = 'data:image/jpeg;base64,abc123';
+  globalThis.fetch = async (url, opts) => {
+    corpo = JSON.parse(opts.body);
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        model: MODELO_IMAGEM_PADRAO,
+        usage: {
+          prompt_tokens: 34,
+          completion_tokens: 1120,
+          total_tokens: 1154,
+          cost: 0.0336,
+          completion_tokens_details: { image_tokens: 1120 },
+        },
+        choices: [{ message: { images: [{ type: 'image_url', image_url: { url: imgFake } }] } }],
+      }),
+    };
+  };
+  const res = await gerarImagemCarta({
+    chave: 'sk-or-x',
+    modeloImagem: MODELO_IMAGEM_PADRAO,
+    carta: { nome: 'Escudo Solar', texto: 'Bloqueia 1 dano.' },
+    kit: kitExemplo,
+    entrada: entradaExemplo,
+  });
+  assert.deepEqual(corpo.modalities, ['image', 'text']);
+  assert.equal(corpo.models[0], MODELO_IMAGEM_PADRAO);
+  assert.equal(res.imagemUrl, imgFake);
+  assert.equal(res.metricas.imageTokens, 1120);
+  assert.equal(res.metricas.custoUsd, 0.0336);
 });

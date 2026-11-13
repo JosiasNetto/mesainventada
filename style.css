@@ -129,18 +129,47 @@ button.nota-amarela:hover { border-color: var(--tinta); }
 [contenteditable]:hover { background: rgba(47, 90, 168, 0.06); }
 [contenteditable]:focus { outline: 2px dashed var(--caneta-azul); outline-offset: 2px; background: var(--branco); }
 
-.cartas { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px; padding: 6px 2px 10px; }
+.topo-cartas {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.topo-cartas h4 { margin: 0; }
+.acoes-topo-cartas { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.botao-ilustrar-todas {
+  background: var(--azul); border: 2px solid var(--tinta); border-radius: 4px;
+  padding: 6px 12px; font-size: 0.92rem; font-weight: 700;
+}
+.botao-ilustrar-todas:disabled { opacity: 0.6; cursor: progress; }
+
+.cartas { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 18px; padding: 6px 2px 10px; }
 .carta {
-  position: relative; aspect-ratio: 63 / 88; display: flex; flex-direction: column; gap: 8px;
-  background: var(--branco); border: 2px solid var(--tinta); border-radius: 8px; padding: 14px 12px 12px;
+  position: relative; aspect-ratio: 63 / 88; display: flex; flex-direction: column; gap: 6px;
+  background: var(--branco); border: 2px solid var(--tinta); border-radius: 8px; padding: 12px 11px 10px;
   box-shadow: 2px 3px 0 rgba(43, 43, 43, 0.18); transform: rotate(-0.7deg); transition: transform 0.15s;
 }
+.carta.carta-com-arte { aspect-ratio: auto; min-height: 250px; }
 .carta:nth-child(even) { transform: rotate(0.6deg); }
 .carta:nth-child(3n) { transform: rotate(-0.2deg); }
 .carta:focus-within, .carta:hover { transform: none; }
 .carta::before { content: ''; position: absolute; inset: 5px; border: 1px dashed rgba(43, 43, 43, 0.25); border-radius: 5px; pointer-events: none; }
-.carta-nome { font-size: 1rem; line-height: 1.2; padding-bottom: 6px; border-bottom: 1.5px solid var(--tinta); }
-.carta-texto { font-size: 0.9rem; line-height: 1.35; flex: 1; }
+.carta-nome { font-size: 0.98rem; line-height: 1.2; padding-bottom: 5px; border-bottom: 1.5px solid var(--tinta); }
+.carta-arte {
+  width: 100%; height: 96px; border: 1.5px solid var(--tinta); border-radius: 4px;
+  overflow: hidden; background: var(--papel); display: flex; align-items: center; justify-content: center;
+}
+.carta-arte img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.carta-texto { font-size: 0.88rem; line-height: 1.32; flex: 1; }
+.carta-rodape { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-top: auto; z-index: 1; }
+.carta-acoes-arte { display: inline-flex; gap: 4px; align-items: center; }
+.botao-arte-carta {
+  background: var(--amarelo); border: 1.5px solid var(--tinta); border-radius: 4px;
+  padding: 2px 7px; font-size: 0.76rem; font-weight: 700; line-height: 1.2;
+}
+.botao-arte-carta:disabled { opacity: 0.6; cursor: progress; }
+.botao-remover-arte {
+  background: var(--vermelho); border: 1.5px solid var(--tinta); border-radius: 4px;
+  padding: 2px 5px; font-size: 0.72rem; line-height: 1.2;
+}
 .carta-qtd { align-self: flex-end; font-family: var(--mao); color: var(--caneta-azul); font-size: 1.05rem; }
 .carta-remover {
   position: absolute; top: -10px; right: -10px; width: 28px; height: 28px; border-radius: 50%;
@@ -155,6 +184,25 @@ button.nota-amarela:hover { border-color: var(--tinta); }
 
 .travas { margin-top: 18px; border-left: 4px solid #b44; background: rgba(248, 215, 215, 0.55); padding: 10px 14px; border-radius: 0 4px 4px 0; }
 .travas ul { margin: 6px 0 0; padding-left: 1.2em; }
+
+.painel-metricas {
+  margin-top: 18px; border: 2px solid var(--tinta); border-radius: 6px;
+  background: var(--branco); padding: 12px 14px;
+}
+.painel-metricas h4 { margin: 0 0 8px; font-size: 0.98rem; color: var(--caneta-azul); }
+.metricas-grade {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px;
+}
+.metrica-bloco {
+  background: var(--papel); border: 1.5px solid rgba(43, 43, 43, 0.3); border-radius: 4px;
+  padding: 8px 10px; display: flex; flex-direction: column; gap: 2px;
+}
+.metrica-bloco strong { font-size: 0.85rem; color: var(--tinta-suave); }
+.metrica-valor { font-size: 1.02rem; font-weight: 700; color: var(--tinta); }
+.metrica-detalhe { font-size: 0.8rem; color: var(--tinta-suave); line-height: 1.3; }
+.metricas-orcamento { margin: 8px 0 0; font-size: 0.86rem; color: var(--tinta-suave); }
+.metricas-versao { font-size: 0.85rem; color: var(--tinta-suave); background: rgba(47, 90, 168, 0.08); padding: 2px 8px; border-radius: 3px; }
+
 .acoes { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; align-items: center; }
 
 /* ---- revisão, histórico e comparação ---- */
@@ -216,10 +264,13 @@ dialog a { color: var(--caneta-azul); }
   .rodape-impressao { margin-top: 16pt !important; font-size: 9pt; color: #555; }
   .grade-cartas { display: grid; grid-template-columns: repeat(3, 63mm); grid-auto-rows: 88mm; }
   .carta-impressa {
-    border: 1px dashed #999; padding: 4mm; overflow: hidden; box-sizing: border-box;
-    display: flex; flex-direction: column; gap: 3mm; break-inside: avoid;
+    border: 1px dashed #999; padding: 3.5mm; overflow: hidden; box-sizing: border-box;
+    display: flex; flex-direction: column; gap: 2mm; break-inside: avoid;
   }
-  .carta-impressa strong { font-size: 12pt; border-bottom: 1px solid #000; padding-bottom: 2mm; }
-  .carta-impressa p { margin: 0; font-size: 10pt; line-height: 1.3; flex: 1; overflow: hidden; }
+  .carta-impressa strong { font-size: 11pt; border-bottom: 1px solid #000; padding-bottom: 1.5mm; }
+  .carta-impressa-arte {
+    width: 100%; height: 28mm; object-fit: cover; border: 0.3mm solid #333; border-radius: 1mm; display: block;
+  }
+  .carta-impressa p { margin: 0; font-size: 9.5pt; line-height: 1.25; flex: 1; overflow: hidden; }
   .carta-impressa small { font-size: 7pt; color: #777; }
 }

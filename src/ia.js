@@ -1,10 +1,13 @@
 // Onde a IA entra: prompts, chamada à OpenRouter (chave da própria pessoa) e avisos de falha.
 import { formatarReferenciaParaPrompt } from './referencias.js';
+import { extrairMetricas } from './custos.js';
 
 export const MODELO_PADRAO = 'nvidia/nemotron-3.5-super-vl:free';
 // Modelos grátis saturam ou somem sem aviso; a OpenRouter tenta estes, em ordem, se o escolhido falhar.
 // ponytail: lista fixa de 3 (limite seguro da API); revisar os ":free" disponíveis antes de cada entrega.
 const RESERVAS = ['openrouter/free', 'google/gemma-4-31b-it:free'];
+export const MODELO_IMAGEM_PADRAO = 'google/gemini-3.1-flash-lite-image';
+const RESERVAS_IMAGEM = ['openai/gpt-5-image-mini', 'google/gemini-2.5-flash-image'];
 const URL_API = 'https://openrouter.ai/api/v1/chat/completions';
 const LIMITE_TURNO = { facil: 3, medio: 5 };
 
@@ -153,8 +156,40 @@ export function mensagemDeErro(status) {
   return `Erro inesperado (${status}). Tente de novo.`;
 }
 
-export async function chamarLLM({ chave, modelo, mensagens, semente }) {
+export function promptImagemCarta(carta, kit, entrada) {
+  const nomeCarta = String(carta?.nome ?? 'Carta').trim();
+  const efeitoCarta = String(carta?.texto ?? '').trim();
+  const tituloJogo = String(kit?.titulo ?? '').trim();
+  const temaJogo = String(entrada?.tema ?? '').trim();
+
+  const user = [
+    `Crie uma ilustração para a carta "${nomeCarta}" do jogo de cartas "${tituloJogo || 'MesaInventada'}".`,
+    temaJogo ? `Tema e atmosfera do jogo: ${temaJogo}.` : '',
+    efeitoCarta ? `Ação ou ideia da carta: ${efeitoCarta}.` : '',
+    'Estilo visual: ilustração expressiva em traço de caderno/nanquim com cores suaves de marcador, fundo claro e alto contraste para ficar nítida quando impressa em folha A4.',
+    'Regra obrigatória: gere apenas a arte visual centralizada; NÃO escreva texto, letras, números ou bordas de carta dentro da imagem (sem texto na imagem).',
+  ].filter(Boolean).join('\n');
+
+  return [{ role: 'user', content: user }];
+}
+
+export function extrairImagem(dados) {
+  const msg = dados?.choices?.[0]?.message;
+  const imgItem = Array.isArray(msg?.images) ? msg.images[0] : null;
+  const urlDireta = imgItem?.image_url?.url || imgItem?.url || '';
+  if (typeof urlDireta === 'string' && urlDireta.startsWith('data:image/')) return urlDireta;
+  if (typeof urlDireta === 'string' && /^https?:\/\//i.test(urlDireta)) return urlDireta;
+
+  const texto = String(msg?.content ?? '');
+  const matchData = texto.match(/data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+/);
+  if (matchData) return matchData[0];
+
+  throw new Error('O modelo não gerou uma imagem válida. Tente de novo ou troque o modelo de imagem em ⚙ Configurar.');
+}
+
+export async function chamarLLMComMetricas({ chave, modelo, mensagens, semente }) {
   const models = [...new Set([modelo, MODELO_PADRAO, ...RESERVAS])].slice(0, 3);
+  const inicio = Date.now();
   let res;
   try {
     res = await fetch(URL_API, {
@@ -167,9 +202,46 @@ export async function chamarLLM({ chave, modelo, mensagens, semente }) {
     if (e?.name === 'TimeoutError') throw new Error('A IA demorou mais de 90 segundos. Tente de novo ou troque o modelo em ⚙ Configurar.');
     throw new Error('Sem conexão com a OpenRouter. Verifique a internet e tente de novo.');
   }
+  const duracaoMs = Date.now() - inicio;
   const dados = await res.json().catch(() => ({}));
   const motivo = dados.error?.message ? ` (OpenRouter: ${dados.error.message})` : '';
   if (!res.ok) throw new Error(mensagemDeErro(res.status) + motivo);
   if (dados.error) throw new Error(mensagemDeErro(Number(dados.error.code) || 500) + motivo);
-  return extrairJSON(dados.choices?.[0]?.message?.content);
+  const kit = extrairJSON(dados.choices?.[0]?.message?.content);
+  const metricas = extrairMetricas(dados, duracaoMs, models[0]);
+  return { kit, metricas };
+}
+
+export async function chamarLLM(opcoes) {
+  const { kit } = await chamarLLMComMetricas(opcoes);
+  return kit;
+}
+
+export async function gerarImagemCarta({ chave, modeloImagem, carta, kit, entrada }) {
+  const models = [...new Set([modeloImagem || MODELO_IMAGEM_PADRAO, MODELO_IMAGEM_PADRAO, ...RESERVAS_IMAGEM])].slice(0, 3);
+  const mensagens = promptImagemCarta(carta, kit, entrada);
+  const inicio = Date.now();
+  let res;
+  try {
+    res = await fetch(URL_API, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${chave}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ models, modalities: ['image', 'text'], messages: mensagens }),
+      signal: AbortSignal.timeout(90_000),
+    });
+  } catch (e) {
+    if (e?.name === 'TimeoutError') throw new Error('A geração da imagem demorou mais de 90 segundos. Tente de novo.');
+    throw new Error('Sem conexão com a OpenRouter. Verifique a internet e tente de novo.');
+  }
+  const duracaoMs = Date.now() - inicio;
+  const dados = await res.json().catch(() => ({}));
+  const motivo = dados.error?.message ? ` (OpenRouter: ${dados.error.message})` : '';
+  if (!res.ok) throw new Error(mensagemDeErro(res.status) + motivo);
+  if (dados.error) throw new Error(mensagemDeErro(Number(dados.error.code) || 500) + motivo);
+  const imagemUrl = extrairImagem(dados);
+  const metricas = {
+    cartaNome: String(carta?.nome ?? ''),
+    ...extrairMetricas(dados, duracaoMs, models[0]),
+  };
+  return { imagemUrl, metricas };
 }

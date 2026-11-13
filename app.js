@@ -2,7 +2,23 @@
 import { catalogo, mecanicaCompativel } from './src/mecanicas.js';
 import { materiaisExtras, combinarMateriais } from './src/materiais.js';
 import { normalizarJogadores, removerMecanicasIncompativeis, descreverFaixaJogadores } from './src/jogadores.js';
-import { MODELO_PADRAO, promptKit, promptRevisao, chamarLLM, chaveValida, AVISO_CHAVE } from './src/ia.js';
+import {
+  MODELO_PADRAO,
+  MODELO_IMAGEM_PADRAO,
+  promptKit,
+  promptRevisao,
+  chamarLLMComMetricas,
+  gerarImagemCarta,
+  chaveValida,
+  AVISO_CHAVE,
+} from './src/ia.js';
+import {
+  resumirCustosVersao,
+  formatarResumoMetricas,
+  formatarSegundos,
+  formatarUsd,
+  formatarBrl,
+} from './src/custos.js';
 import { validarKit } from './src/validador.js';
 
 const $ = sel => document.querySelector(sel);
@@ -209,6 +225,7 @@ function mostrarErroChave(msg) {
 function abrirConfig(erro = '') {
   $('#chave').value = ler('mi:chave', '');
   $('#modelo').value = ler('mi:modelo', MODELO_PADRAO);
+  if ($('#modelo-imagem')) $('#modelo-imagem').value = ler('mi:modelo-imagem', MODELO_IMAGEM_PADRAO);
   mostrarErroChave(erro);
   $('#config').showModal();
 }
@@ -218,6 +235,7 @@ $('#salvar-config').addEventListener('click', e => {
   if (chave && !chaveValida(chave)) { e.preventDefault(); mostrarErroChave(AVISO_CHAVE); return; }
   gravar('mi:chave', chave);
   gravar('mi:modelo', $('#modelo').value.trim() || MODELO_PADRAO);
+  if ($('#modelo-imagem')) gravar('mi:modelo-imagem', $('#modelo-imagem').value.trim() || MODELO_IMAGEM_PADRAO);
 });
 
 // Sem chave: abre a configuração. Chave salva fora do formato (ex.: copiada da lista do site): abre com a explicação.
@@ -244,6 +262,7 @@ function mostrarAviso(msg) {
 }
 
 let carregando = false;
+let progressoIlustracao = '';
 async function gerar(mensagens, extras, botao = $('#criar')) {
   if (carregando) return;
   carregando = true;
@@ -255,8 +274,27 @@ async function gerar(mensagens, extras, botao = $('#criar')) {
   const relogio = setInterval(tique, 1000);
   try {
     const semente = Math.floor(Math.random() * 1e6);
-    const kit = await chamarLLM({ chave: ler('mi:chave', ''), modelo: ler('mi:modelo', MODELO_PADRAO), mensagens, semente });
-    adicionarVersao({ ...extras, semente, kit });
+    const anterior = versaoAtual();
+    const { kit, metricas } = await chamarLLMComMetricas({
+      chave: ler('mi:chave', ''),
+      modelo: ler('mi:modelo', MODELO_PADRAO),
+      mensagens,
+      semente,
+    });
+    if (extras.origem === 'revisado' && Array.isArray(anterior?.kit?.cartas) && Array.isArray(kit?.cartas)) {
+      const artesPorNome = new Map(
+        anterior.kit.cartas
+          .filter(c => c && typeof c === 'object' && c.nome && c.imagem)
+          .map(c => [String(c.nome).trim().toLowerCase(), c.imagem]),
+      );
+      kit.cartas.forEach(c => {
+        if (c && typeof c === 'object' && !c.imagem) {
+          const arte = artesPorNome.get(String(c.nome ?? '').trim().toLowerCase());
+          if (arte) c.imagem = arte;
+        }
+      });
+    }
+    adicionarVersao({ ...extras, semente, kit, metricas, metricasImagens: [] });
     mostrarAviso('');
     render();
   } catch (e) {
@@ -266,6 +304,115 @@ async function gerar(mensagens, extras, botao = $('#criar')) {
     botao.disabled = false;
     botao.textContent = rotulo;
     carregando = false;
+  }
+}
+
+async function compactarImagem(dataUrl, maxLado = 360, qualidade = 0.76) {
+  if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/')) return dataUrl;
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const maior = Math.max(img.width || 1, img.height || 1);
+        const escala = maior > maxLado ? maxLado / maior : 1;
+        const w = Math.max(1, Math.round(img.width * escala));
+        const h = Math.max(1, Math.round(img.height * escala));
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', qualidade));
+      } catch {
+        resolve(dataUrl);
+      }
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
+async function ilustrarUmaCarta(indice, botao) {
+  const v = versaoAtual();
+  if (!v || carregando || !chaveOuConfig()) return;
+  const carta = v.kit?.cartas?.[indice];
+  if (!carta || typeof carta !== 'object') return;
+  carregando = true;
+  const rotulo = botao ? botao.textContent : '';
+  const inicio = Date.now();
+  const tique = () => {
+    if (botao) botao.textContent = `🎨 ${Math.round((Date.now() - inicio) / 1000)} s`;
+  };
+  if (botao) botao.disabled = true;
+  tique();
+  const relogio = setInterval(tique, 1000);
+  try {
+    const { imagemUrl, metricas } = await gerarImagemCarta({
+      chave: ler('mi:chave', ''),
+      modeloImagem: ler('mi:modelo-imagem', MODELO_IMAGEM_PADRAO),
+      carta,
+      kit: v.kit,
+      entrada: v.entrada,
+    });
+    carta.imagem = await compactarImagem(imagemUrl);
+    if (!Array.isArray(v.metricasImagens)) v.metricasImagens = [];
+    v.metricasImagens.push(metricas);
+    gravar('mi:projeto', projeto);
+    mostrarAviso('');
+    render();
+  } catch (e) {
+    mostrarAviso(e.message);
+  } finally {
+    clearInterval(relogio);
+    if (botao) {
+      botao.disabled = false;
+      botao.textContent = rotulo;
+    }
+    carregando = false;
+  }
+}
+
+async function ilustrarTodasAsCartas() {
+  const v = versaoAtual();
+  if (!v || carregando || !chaveOuConfig()) return;
+  const cartas = Array.isArray(v.kit?.cartas) ? v.kit.cartas.filter(c => c && typeof c === 'object') : [];
+  if (!cartas.length) return;
+  const pendentes = cartas.some(c => !c.imagem) ? cartas.filter(c => !c.imagem) : cartas;
+  carregando = true;
+  const atualizarBotao = texto => {
+    progressoIlustracao = texto;
+    const b = $('#kit button[data-acao="ilustrar-todas"]');
+    if (b) {
+      b.disabled = true;
+      b.textContent = texto;
+    }
+  };
+  try {
+    for (let idx = 0; idx < pendentes.length; idx++) {
+      const carta = pendentes[idx];
+      atualizarBotao(`🎨 Ilustrando ${idx + 1}/${pendentes.length}…`);
+      const { imagemUrl, metricas } = await gerarImagemCarta({
+        chave: ler('mi:chave', ''),
+        modeloImagem: ler('mi:modelo-imagem', MODELO_IMAGEM_PADRAO),
+        carta,
+        kit: v.kit,
+        entrada: v.entrada,
+      });
+      carta.imagem = await compactarImagem(imagemUrl);
+      if (!Array.isArray(v.metricasImagens)) v.metricasImagens = [];
+      v.metricasImagens.push(metricas);
+      gravar('mi:projeto', projeto);
+      render();
+    }
+    mostrarAviso('');
+  } catch (e) {
+    mostrarAviso(e.message);
+  } finally {
+    progressoIlustracao = '';
+    carregando = false;
+    render();
   }
 }
 
@@ -317,12 +464,47 @@ function renderKit(kit, alvo, editavel) {
   );
 
   const grade = el('div', null, 'cartas');
-  lista(k.cartas).forEach((carta, i) => {
+  const listaCartas = lista(k.cartas);
+  listaCartas.forEach((carta, i) => {
     const cc = carta && typeof carta === 'object' ? carta : { nome: carta };
-    const d = el('div', null, 'carta');
+    const temArte = Boolean(cc.imagem);
+    const d = el('div', null, temArte ? 'carta carta-com-arte' : 'carta');
+    d.append(c('strong', cc.nome, `cartas.${i}.nome`, 'carta-nome'));
+    if (temArte) {
+      const moldura = el('div', null, 'carta-arte');
+      const img = el('img');
+      img.src = String(cc.imagem);
+      img.alt = `Ilustração da carta ${texto(cc.nome)}`;
+      img.loading = 'lazy';
+      moldura.append(img);
+      d.append(moldura);
+    }
+    d.append(c('p', cc.texto, `cartas.${i}.texto`, 'carta-texto'));
+    const rodape = el('div', null, 'carta-rodape');
+    if (editavel) {
+      const acoesArte = el('div', null, 'carta-acoes-arte');
+      const btnArte = el('button', temArte ? '↻ arte' : '🎨 ilustrar', 'botao-arte-carta');
+      btnArte.type = 'button';
+      btnArte.dataset.ilustrar = i;
+      btnArte.disabled = carregando;
+      btnArte.title = temArte ? 'Gerar outra ilustração para esta carta' : 'Gerar ilustração com IA para esta carta';
+      acoesArte.append(btnArte);
+      if (temArte) {
+        const btnSemArte = el('button', '✕', 'botao-remover-arte');
+        btnSemArte.type = 'button';
+        btnSemArte.dataset.removerArte = i;
+        btnSemArte.title = 'Remover ilustração desta carta';
+        btnSemArte.setAttribute('aria-label', `Remover ilustração da carta ${texto(cc.nome)}`);
+        acoesArte.append(btnSemArte);
+      }
+      rodape.append(acoesArte);
+    } else {
+      rodape.append(el('span'));
+    }
     const qtd = el('span', '×', 'carta-qtd');
     qtd.append(c('span', Number(cc.quantidade) || 1, `cartas.${i}.quantidade`));
-    d.append(c('strong', cc.nome, `cartas.${i}.nome`, 'carta-nome'), c('p', cc.texto, `cartas.${i}.texto`, 'carta-texto'), qtd);
+    rodape.append(qtd);
+    d.append(rodape);
     if (editavel) {
       const x = el('button', '✕', 'carta-remover');
       x.type = 'button';
@@ -339,12 +521,33 @@ function renderKit(kit, alvo, editavel) {
     grade.append(mais);
   }
 
+  const secaoCartas = el('div', null, 'parte');
+  if (editavel && listaCartas.length) {
+    const ilustradas = listaCartas.filter(cc => cc && typeof cc === 'object' && cc.imagem).length;
+    const topoCartas = el('div', null, 'topo-cartas');
+    topoCartas.append(el('h4', `Cartas (${ilustradas}/${listaCartas.length} ilustradas)`));
+    const acoesTopo = el('div', null, 'acoes-topo-cartas');
+    const btnTodas = el(
+      'button',
+      progressoIlustracao || (ilustradas === listaCartas.length ? '↻ Reilustrar todas as cartas' : '🎨 Ilustrar todas as cartas'),
+      'botao-ilustrar-todas',
+    );
+    btnTodas.type = 'button';
+    btnTodas.dataset.acao = 'ilustrar-todas';
+    btnTodas.disabled = carregando;
+    acoesTopo.append(btnTodas);
+    topoCartas.append(acoesTopo);
+    secaoCartas.append(topoCartas, grade);
+  } else {
+    secaoCartas.append(el('h4', 'Cartas'), grade);
+  }
+
   const rodada = el('div', null, 'nota-amarela rodada');
   rodada.append(el('h4', 'rodada teste'), ol('rodada'));
   const provocacao = el('p', null, 'provocacao');
   provocacao.append(el('span', '❓ ', 'provocacao-icone'), c('span', k.provocacao, 'provocacao'));
 
-  alvo.replaceChildren(regras, parte('Cartas', grade), rodada, provocacao);
+  alvo.replaceChildren(regras, secaoCartas, rodada, provocacao);
 }
 
 function renderTravas() {
@@ -381,6 +584,64 @@ $('#revisar').addEventListener('click', () => {
   revisar(relato, $('#revisar'));
 });
 
+function renderMetricas() {
+  const caixa = $('#metricas');
+  if (!caixa) return;
+  const v = versaoAtual();
+  if (!v) {
+    caixa.hidden = true;
+    return;
+  }
+  const r = resumirCustosVersao(v);
+  const temDados = r.total.duracaoMs > 0 || r.total.totalTokens > 0 || r.imagens.quantidade > 0;
+  if (!temDados) {
+    caixa.hidden = true;
+    return;
+  }
+
+  const criarBloco = (titulo, valor, detalhe) => {
+    const b = el('div', null, 'metrica-bloco');
+    b.append(el('strong', titulo), el('span', valor, 'metrica-valor'), el('span', detalhe, 'metrica-detalhe'));
+    return b;
+  };
+
+  const grade = el('div', null, 'metricas-grade');
+  grade.append(
+    criarBloco(
+      'Texto (regras e cartas)',
+      `${formatarSegundos(r.texto.duracaoMs)} · ${formatarUsd(r.texto.custoUsd)}`,
+      `${r.texto.totalTokens} tokens (${r.texto.promptTokens} entrada + ${r.texto.completionTokens} saída)${r.texto.modelo ? ` · ${r.texto.modelo}` : ''}`,
+    ),
+    criarBloco(
+      `Imagens geradas (${r.imagens.quantidade})`,
+      `${formatarSegundos(r.imagens.duracaoMs)} · ${formatarUsd(r.imagens.custoUsd)}`,
+      r.imagens.quantidade
+        ? `${r.imagens.totalTokens} tokens (${r.imagens.imageTokens} de imagem)${r.imagens.modelos.length ? ` · ${r.imagens.modelos.join(', ')}` : ''}`
+        : 'Nenhuma carta ilustrada ainda nesta versão.',
+    ),
+    criarBloco(
+      'Total do artefato',
+      `${formatarSegundos(r.total.duracaoMs)} · ${formatarUsd(r.total.custoUsd)}`,
+      `Equivalente a ${formatarBrl(r.total.custoBrl)} · ${r.total.totalTokens} tokens totais`,
+    ),
+  );
+
+  const orcamento = el(
+    'p',
+    r.estimativaOrcamento.kitsNoOrcamento != null
+      ? `No orçamento de US$ ${r.estimativaOrcamento.orcamentoUsd.toFixed(2).replace('.', ',')} da chave da turma, cabem cerca de ${r.estimativaOrcamento.kitsNoOrcamento} artefatos com este perfil de custo.`
+      : 'Geração com custo zero na API (modelo gratuito sem imagens pagas).',
+    'metricas-orcamento',
+  );
+
+  caixa.replaceChildren(
+    el('h4', `⏱ Avaliação de tempo e custo deste artefato (v${v.n})`),
+    grade,
+    orcamento,
+  );
+  caixa.hidden = false;
+}
+
 function renderHistorico() {
   const ol = el('ol', null, 'versoes');
   projeto.versoes.forEach((v, i) => {
@@ -389,6 +650,10 @@ function renderHistorico() {
     const rotulo = el('span', `v${v.n} · ${v.origem} · ${hora}`, 'rotulo-versao');
     rotulo.title = `semente ${v.semente}${v.relato ? ` · relato: ${v.relato}` : ''}`;
     li.append(rotulo);
+    const resumo = resumirCustosVersao(v);
+    if (resumo.total.duracaoMs > 0 || resumo.total.totalTokens > 0 || resumo.imagens.quantidade > 0) {
+      li.append(el('span', formatarResumoMetricas(resumo).curto, 'metricas-versao'));
+    }
     if (i === projeto.atual) li.append(el('span', 'aberta', 'marca-atual'));
     else {
       const abrir = el('button', 'abrir', 'botao-texto');
@@ -450,7 +715,14 @@ function renderImpressao(kit) {
     const grade = el('div', null, 'grade-cartas');
     fisicas.slice(i, i + 9).forEach(cc => {
       const d = el('div', null, 'carta-impressa');
-      d.append(el('strong', texto(cc.nome)), el('p', texto(cc.texto)), el('small', texto(k.titulo)));
+      d.append(el('strong', texto(cc.nome)));
+      if (cc.imagem) {
+        const img = el('img', null, 'carta-impressa-arte');
+        img.src = String(cc.imagem);
+        img.alt = '';
+        d.append(img);
+      }
+      d.append(el('p', texto(cc.texto)), el('small', texto(k.titulo)));
       grade.append(d);
     });
     const pagina = el('div', null, 'pagina');
@@ -470,6 +742,7 @@ function render() {
     renderKit(v.kit, $('#kit'), true);
     renderImpressao(v.kit);
   }
+  renderMetricas();
   renderTravas();
   renderHistorico();
   $('#comparacao').hidden = true;
@@ -499,7 +772,12 @@ $('#kit').addEventListener('click', e => {
   const b = e.target.closest('button');
   if (!v || !b) return;
   if (!Array.isArray(v.kit.cartas)) v.kit.cartas = [];
-  if (b.dataset.remover != null) v.kit.cartas.splice(Number(b.dataset.remover), 1);
+  if (b.dataset.ilustrar != null) { ilustrarUmaCarta(Number(b.dataset.ilustrar), b); return; }
+  if (b.dataset.acao === 'ilustrar-todas') { ilustrarTodasAsCartas(b); return; }
+  if (b.dataset.removerArte != null) {
+    const carta = v.kit.cartas[Number(b.dataset.removerArte)];
+    if (carta && typeof carta === 'object') delete carta.imagem;
+  } else if (b.dataset.remover != null) v.kit.cartas.splice(Number(b.dataset.remover), 1);
   else if (b.dataset.acao === 'nova-carta') v.kit.cartas.push({ nome: 'Nova carta', texto: 'Escreva o efeito', quantidade: 1 });
   else return;
   gravar('mi:projeto', projeto);

@@ -40,8 +40,9 @@ npm test   # Node 22+, sem dependências
 - **Sem IA:** o catálogo de mecânicas é fixo e completo, organizado em famílias (cooperativo, competitivo, informação oculta, negociação, sorte). A pessoa vê todas as opções num modal e escolhe até cinco para combinar. As **travas** também não usam IA: conferem passos do turno, quantidade e tamanho das cartas e materiais usados.
 - **Com IA** (modelo de linguagem via OpenRouter):
   - decide as regras (objetivo, preparação, turno, fim), o texto e a quantidade das cartas, uma rodada de teste simulada e uma **provocação** que questiona uma suposição do jogo;
+  - gera sob demanda as **ilustrações das cartas** (individualmente ou para todas as cartas do kit de uma vez), integradas à visualização na tela e ao PDF Print & Play;
   - na revisão, reescreve o kit a partir do relato do teste e explica o que mudou.
-- **A pessoa decide** o tema (com quantos detalhes quiser), o público, os materiais (inclusive outros escritos à mão), qual mecânica usar (ou até cinco combinar) e a dificuldade. Também pode editar qualquer texto, apagar e criar cartas, voltar a qualquer versão e comparar duas versões lado a lado.
+- **A pessoa decide** o tema (com quantos detalhes quiser), o público, os materiais (inclusive outros escritos à mão), qual mecânica usar (ou até cinco combinar), a dificuldade e se/quando ilustrar cada carta. Também pode editar qualquer texto, apagar e criar cartas, trocar ou remover ilustrações, voltar a qualquer versão, comparar versões e consultar o tempo e o custo de cada artefato.
 
 ## Mapa do diagrama para o código
 
@@ -50,7 +51,8 @@ npm test   # Node 22+, sem dependências
 | Formulário | `index.html` + `app.js` |
 | Módulo A: motor de mecânicas + catálogo de mecânicas | `src/mecanicas.js` |
 | Catálogo de jogos existentes e regras passadas | `src/jogos-referencia.json` + `src/referencias.js` |
-| API externa LLM: regras, cartas e rodada | `src/ia.js` |
+| API externa LLM e Imagem: regras, cartas, rodada e ilustrações | `src/ia.js` |
+| Avaliação de tempo, tokens e custo do artefato | `src/custos.js` + `docs/avaliacao-tempo-custo.md` |
 | Módulo B: validador de equilíbrio + travas | `src/validador.js` |
 | Módulo C: gerador de PDF A4 + templates das cartas | `renderImpressao` em `app.js` + `@media print` em `style.css` |
 | Banco SQLite: projetos e componentes | `localStorage` do navegador (`mi:projeto`) |
@@ -68,3 +70,5 @@ npm test   # Node 22+, sem dependências
 - **Dificuldade limita o turno.** "fácil" permite no máximo 3 passos no turno, e "médio" permite no máximo 5.
 - **Chave da própria pessoa (BYOK).** Não há chave do grupo embutida, e a tela explica como obter uma chave gratuita.
 - **Jogadores de 1 a 8.** O formulário, o filtro de mecânicas, o prompt e as travas tratam desde modo solo (1 pessoa) até mesas maiores (8 pessoas), avisando quando alguma mecânica deixa de ser compatível.
+- **Ilustrações de cartas sob demanda.** Cada carta tem um botão para gerar ou trocar sua ilustração via OpenRouter (`openai/gpt-5-image-mini` / `google/gemini-3.1-flash-lite-image`), além do botão "Ilustrar todas as cartas", com compactação automática em JPEG para caber no `localStorage` e impressão no PDF A4.
+- **Avaliação de tempo e custo por artefato.** A ferramenta mede o tempo de resposta, os tokens de entrada/saída/imagem e o custo em US$ e R$ de cada versão (texto + imagens), exibindo na tela, no histórico de versões e no relatório técnico em `docs/avaliacao-tempo-custo.md`.

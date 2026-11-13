@@ -28,9 +28,9 @@
         <li>Abra o catálogo completo, veja todas as mecânicas e escolha de uma a cinco para combinar.</li>
         <li>Marque os materiais que você tem e escreva outros no campo "outros materiais".</li>
         <li>Clique em CRIAR JOGO. A IA escreve regras, cartas e uma rodada de teste, e tudo fica editável.</li>
-        <li>Jogue com papel, relate o que deu errado e peça uma revisão. Baixe o PDF para imprimir.</li>
+        <li>Ilustre as cartas individualmente ou clique em "Ilustrar todas as cartas", confira o tempo e o custo da geração e baixe o PDF para imprimir.</li>
       </ol>
-      <p><strong>Onde a IA entra:</strong> o catálogo de mecânicas é fixo, sem IA, e você escolhe nele as que quer usar. A IA (um modelo de linguagem via OpenRouter) decide as regras, o texto das cartas, a rodada de teste e a provocação, e reescreve o kit a partir do seu relato. As travas, também sem IA, avisam quando o resultado foge dos limites. A última palavra é sua: dá para editar, apagar ou voltar a qualquer versão.</p>
+      <p><strong>Onde a IA entra:</strong> o catálogo de mecânicas é fixo, sem IA, e você escolhe nele as que quer usar. A IA ( via OpenRouter) decide as regras, o texto das cartas, a rodada de teste, a provocação e as ilustrações das cartas sob demanda, além de reescrever o kit a partir do seu relato. A ferramenta mede o tempo, os tokens e o custo de cada artefato gerado. As travas, sem IA, avisam quando o resultado foge dos limites. A última palavra é sua: dá para editar, apagar ou voltar a qualquer versão.</p>
     </details>
 
     <main class="colunas">
@@ -85,6 +85,7 @@
         <div id="saida" hidden>
           <p class="dica">Clique em qualquer texto do kit para editar.</p>
           <div id="kit" class="kit"></div>
+          <div id="metricas" class="painel-metricas" hidden></div>
           <div id="travas" class="travas" hidden></div>
           <div id="acoes" class="acoes">
             <button type="button" id="relatar" class="botao-relatar">relatar dificuldade</button>
@@ -133,8 +134,11 @@
       <label class="campo">Chave da OpenRouter
         <input id="chave" type="password" autocomplete="off" placeholder="sk-or-...">
       </label>
-      <label class="campo">Modelo
+      <label class="campo">Modelo de texto
         <input id="modelo" type="text" autocomplete="off">
+      </label>
+      <label class="campo">Modelo de imagem (cartas)
+        <input id="modelo-imagem" type="text" autocomplete="off">
       </label>
       <p class="dica">A chave fica salva só neste navegador e é enviada apenas para a OpenRouter.</p>
       <p id="erro-chave" class="erro-chave" role="alert" hidden></p>
