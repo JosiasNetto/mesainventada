@@ -18,6 +18,10 @@ test('turno longo demais para a dificuldade', () => {
   const k = { ...kitExemplo, turno: ['a', 'b', 'c', 'd'] };
   assert.ok(validarKit(k, entradaExemplo).some(a => a.includes('o limite é 3')));
   assert.deepEqual(validarKit(k, { ...entradaExemplo, dificuldade: 'medio' }), []);
+
+  const k5 = { ...kitExemplo, turno: ['a', 'b', 'c', 'd', 'e'] };
+  assert.ok(validarKit(k5, { ...entradaExemplo, dificuldade: 'medio' }).some(a => a.includes('o limite é 4')));
+  assert.deepEqual(validarKit(k5, { ...entradaExemplo, dificuldade: 'dificil' }), []);
 });
 
 test('número de tipos de carta fora de 4 a 12', () => {

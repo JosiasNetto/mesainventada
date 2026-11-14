@@ -6,7 +6,7 @@ export const MODELO_PADRAO = 'nvidia/nemotron-3.5-super-vl:free';
 // ponytail: lista fixa de 3 (limite seguro da API); revisar os ":free" disponíveis antes de cada entrega.
 const RESERVAS = ['openrouter/free', 'google/gemma-4-31b-it:free'];
 const URL_API = 'https://openrouter.ai/api/v1/chat/completions';
-const LIMITE_TURNO = { facil: 3, medio: 5 };
+const LIMITE_TURNO = { facil: 3, leve: 3, medio: 4, dificil: 6, avancado: 6 };
 
 // A OpenRouter só mostra a chave inteira na criação; a lista de chaves mostra um pedaço ("sk-or-v1-a1b...9f2").
 export const chaveValida = chave => /^sk-or-v1-[A-Za-z0-9]{32,}$/.test(String(chave ?? ''));
@@ -43,9 +43,14 @@ function sistema(entrada) {
     ? '- "tabuleiro": 8 a 16 "casas" (com "numero", "nome" e "efeito" com até 80 caracteres) que cabem em 1 folha A4. O jogo usa peões/marcadores sobre as casas.'
     : '';
 
-  const guiaDificuldade = entrada.dificuldade === 'medio'
-    ? 'Permita decisões táticas, planejamento e pequenas sinergias.'
-    : 'Regras diretas, passos claros e objetivos, sem sinergias complexas.';
+  const DIRETRIZES_COMPLEXIDADE = {
+    facil: 'Leve (Fácil): turnos diretos (até 3 passos), cartas com efeitos imediatos (ex.: "Compre 1 carta", "Ganhe 2 recursos"), sem dependência complexa entre jogadores.',
+    leve: 'Leve (Fácil): turnos diretos (até 3 passos), cartas com efeitos imediatos (ex.: "Compre 1 carta", "Ganhe 2 recursos"), sem dependência complexa entre jogadores.',
+    medio: 'Médio: turnos encadeados (até 4 passos), cartas com efeitos condicionais simples ("Se tiver X, faça Y").',
+    dificil: 'Avançado (Difícil): fases distintas no turno (ex.: Fase de Ação e Fase de Compra, até 6 passos no turno), com combos e sinergias entre cartas.',
+    avancado: 'Avançado (Difícil): fases distintas no turno (ex.: Fase de Ação e Fase de Compra, até 6 passos no turno), com combos e sinergias entre cartas.',
+  };
+  const guiaDificuldade = DIRETRIZES_COMPLEXIDADE[entrada.dificuldade] || DIRETRIZES_COMPLEXIDADE.facil;
 
   return `Você é co-designer de jogos de cartas e tabuleiro curtos na ferramenta MesaInventada.
 Você propõe um protótipo revisável, não um jogo final equilibrado.

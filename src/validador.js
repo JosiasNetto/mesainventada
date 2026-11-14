@@ -1,6 +1,6 @@
 // Módulo B — travas de equilíbrio (sem IA). Avisa; não bloqueia. Nunca lança: o kit vem do modelo.
 
-const LIMITE_TURNO = { facil: 3, medio: 5 };
+const LIMITE_TURNO = { facil: 3, leve: 3, medio: 4, dificil: 6, avancado: 6 };
 
 const PADROES_DISTRIBUICAO = [
   /(\d+)\s+cartas?\s+(?:para|a)\s+cada\s+(?:jogador|pessoa|participante)/gi,
