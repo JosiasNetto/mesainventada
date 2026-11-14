@@ -135,3 +135,17 @@ test('promptComReferencias monta prompts para novas cartas, novas regras e jogo 
   assert.ok(pInspirado.includes('Truco'));
   assert.ok(pInspirado.includes('Regra da turma'));
 });
+
+test('promptKit aceita modoCriacao livre e instrui sobre co-criação aberta', () => {
+  const pLivre = texto(promptKit({ ...entradaExemplo, modoCriacao: 'livre', tema: 'uma batalha épica de cozinheiros' }, []));
+  assert.ok(pLivre.includes('MODO LIVRE - CO-CRIAÇÃO ABERTA'));
+  assert.ok(pLivre.includes('uma batalha épica de cozinheiros'));
+  assert.ok(pLivre.includes('Escolha e combine as mecânicas que melhor se adaptem'));
+});
+
+test('promptKit aceita formato tabuleiro e inclui diretrizes para tabuleiro em folha A4', () => {
+  const pTab = texto(promptKit({ ...entradaExemplo, formato: 'tabuleiro' }, [catalogo[0]]));
+  assert.ok(pTab.includes('tabuleiro'));
+  assert.ok(pTab.includes('folha A4'));
+  assert.ok(pTab.includes('"tabuleiro"'));
+});

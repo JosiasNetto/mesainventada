@@ -74,3 +74,50 @@ test('modo apenasCartasNovas valida lote de cartas sem exigir kit completo', () 
   };
   assert.ok(validarKit(longa, entradaExemplo, [], { apenasCartasNovas: true }).some(a => a.includes('121/120')));
 });
+
+test('validações de tabuleiro quando configurado ou presente', () => {
+  const avisosFalta = validarKit(kitExemplo, { ...entradaExemplo, formato: 'tabuleiro' });
+  assert.ok(avisosFalta.some(a => a.includes('configurado para ter tabuleiro')));
+
+  const kitTabCurto = {
+    ...kitExemplo,
+    tabuleiro: {
+      titulo: 'Trilha do Espaço',
+      tipo: 'trilha',
+      casas: [
+        { numero: 1, nome: 'Início', efeito: 'Partida' },
+        { numero: 2, nome: 'Fim', efeito: 'Chegada' },
+      ],
+    },
+  };
+  const avisosCurto = validarKit(kitTabCurto, { ...entradaExemplo, formato: 'tabuleiro' });
+  assert.ok(avisosCurto.some(a => a.includes('casas; o ideal para caber em 1 folha A4')));
+
+  const casasValidas = Array.from({ length: 10 }, (_, i) => ({
+    numero: i + 1,
+    nome: `Casa ${i + 1}`,
+    efeito: 'Avance ou compre carta.',
+  }));
+  const kitTabOk = {
+    ...kitExemplo,
+    tabuleiro: {
+      titulo: 'Trilha Estelar',
+      tipo: 'trilha',
+      casas: casasValidas,
+    },
+  };
+  assert.deepEqual(validarKit(kitTabOk, { ...entradaExemplo, formato: 'tabuleiro' }), []);
+
+  const kitTabEfeitoLongo = {
+    ...kitTabOk,
+    tabuleiro: {
+      ...kitTabOk.tabuleiro,
+      casas: [
+        ...casasValidas.slice(0, 9),
+        { numero: 10, nome: 'Buraco Negro', efeito: 'y'.repeat(101) },
+      ],
+    },
+  };
+  const avisosLongo = validarKit(kitTabEfeitoLongo, { ...entradaExemplo, formato: 'tabuleiro' });
+  assert.ok(avisosLongo.some(a => a.includes('Buraco Negro') && a.includes('101/100')));
+});

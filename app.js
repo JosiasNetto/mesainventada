@@ -42,7 +42,44 @@ function lerFormulario() {
     duracao: Number($('#duracao').value) || 20,
     materiais: combinarMateriais(fixos, extras),
     dificuldade: document.querySelector('input[name=dificuldade]:checked')?.value || 'facil',
+    modoCriacao: document.querySelector('input[name=modo-criacao]:checked')?.value || 'guiado',
+    formato: document.querySelector('input[name=formato]:checked')?.value || 'cartas',
   };
+}
+
+function atualizarModoCriacao() {
+  const modo = document.querySelector('input[name=modo-criacao]:checked')?.value || 'guiado';
+  const ehLivre = modo === 'livre';
+
+  document.querySelectorAll('.opcao-modo').forEach(lbl => {
+    const input = lbl.querySelector('input');
+    lbl.classList.toggle('modo-ativo', input && input.value === modo);
+  });
+
+  const rotuloTema = $('#rotulo-tema');
+  const dicaTema = $('#dica-tema');
+  const infoLivre = $('#info-modo-livre');
+  const secaoJogadores = $('#secao-jogadores');
+  const secaoMecanicas = $('#secao-mecanicas');
+  const modoDesc = $('#modo-descricao');
+
+  if (ehLivre) {
+    if (rotuloTema) rotuloTema.textContent = '1. Descreva seu jogo livremente';
+    $('#tema').placeholder = 'conte sua ideia sem limites: "um jogo cooperativo de exploração espacial onde cada um controla um setor da nave, precisando negociar oxigênio antes que o reator exploda..."';
+    if (dicaTema) dicaTema.textContent = 'Escreva o que quiser: tema, estilo de jogo, dinâmica ou objetivos.';
+    if (infoLivre) infoLivre.hidden = false;
+    if (secaoJogadores) secaoJogadores.hidden = true;
+    if (secaoMecanicas) secaoMecanicas.hidden = true;
+    if (modoDesc) modoDesc.textContent = 'Modo Livre: a IA analisa sua ideia e infere as melhores mecânicas, regras e materiais.';
+  } else {
+    if (rotuloTema) rotuloTema.textContent = '1. Qual o tema?';
+    $('#tema').placeholder = 'jogo cooperativo sobre espaço... conte o clima, os personagens, o que você quer que aconteça na mesa. Quanto mais detalhes, melhor.';
+    if (dicaTema) dicaTema.textContent = 'Escreva à vontade: a caixa cresce conforme você digita.';
+    if (infoLivre) infoLivre.hidden = true;
+    if (secaoJogadores) secaoJogadores.hidden = false;
+    if (secaoMecanicas) secaoMecanicas.hidden = false;
+    if (modoDesc) modoDesc.textContent = 'Modo Guiado: personalize tema, público e selecione mecânicas do catálogo.';
+  }
 }
 
 function ajustarTema() {
@@ -272,8 +309,18 @@ async function gerar(mensagens, extras, botao = $('#criar')) {
 $('#formulario').addEventListener('submit', e => {
   e.preventDefault();
   const entrada = lerFormulario();
-  if (!entrada.tema) { mostrarAviso('Escreva um tema para o jogo (ou clique no exemplo).'); $('#tema').focus(); return; }
-  if (!selecionadas.length) { mostrarAviso('Escolha uma mecânica (ou até cinco para combinar).'); return; }
+  if (!entrada.tema) {
+    const msg = entrada.modoCriacao === 'livre'
+      ? 'Descreva a sua ideia de jogo no campo de texto.'
+      : 'Escreva um tema para o jogo (ou clique no exemplo).';
+    mostrarAviso(msg);
+    $('#tema').focus();
+    return;
+  }
+  if (entrada.modoCriacao === 'guiado' && !selecionadas.length) {
+    mostrarAviso('Escolha uma mecânica (ou até cinco para combinar).');
+    return;
+  }
   if (!chaveOuConfig()) return;
   gerar(promptKit(entrada, selecionadas), { origem: 'gerado', entrada, mecanicas: [...selecionadas] });
 });
@@ -316,6 +363,40 @@ function renderKit(kit, alvo, editavel) {
     parte('Fim', c('p', k.fim, 'fim')),
   );
 
+  const secoesKit = [regras];
+
+  if (k.tabuleiro && typeof k.tabuleiro === 'object') {
+    const tabDiv = el('div', null, 'tabuleiro-kit');
+    const gradeCasas = el('div', null, 'trilha-casas');
+    const casas = lista(k.tabuleiro.casas);
+    casas.forEach((casa, i) => {
+      const cObj = casa && typeof casa === 'object' ? casa : { nome: casa };
+      const dCasa = el('div', null, 'casa-tabuleiro');
+      dCasa.append(
+        c('span', cObj.numero ?? (i + 1), `tabuleiro.casas.${i}.numero`, 'casa-numero'),
+        c('strong', cObj.nome || `Casa ${i + 1}`, `tabuleiro.casas.${i}.nome`, 'casa-nome'),
+        c('p', cObj.efeito || '', `tabuleiro.casas.${i}.efeito`, 'casa-efeito')
+      );
+      if (editavel) {
+        const x = el('button', '✕', 'casa-remover');
+        x.type = 'button';
+        x.dataset.removerCasa = i;
+        x.setAttribute('aria-label', `Remover a casa ${texto(cObj.nome)}`);
+        dCasa.append(x);
+      }
+      gradeCasas.append(dCasa);
+    });
+    if (editavel) {
+      const maisCasa = el('button', '+ casa', 'casa-tabuleiro casa-nova');
+      maisCasa.type = 'button';
+      maisCasa.dataset.acao = 'nova-casa';
+      gradeCasas.append(maisCasa);
+    }
+    const tituloTab = k.tabuleiro.titulo ? `Tabuleiro: ${k.tabuleiro.titulo}` : 'Tabuleiro';
+    tabDiv.append(parte(tituloTab, gradeCasas));
+    secoesKit.push(tabDiv);
+  }
+
   const grade = el('div', null, 'cartas');
   lista(k.cartas).forEach((carta, i) => {
     const cc = carta && typeof carta === 'object' ? carta : { nome: carta };
@@ -344,7 +425,8 @@ function renderKit(kit, alvo, editavel) {
   const provocacao = el('p', null, 'provocacao');
   provocacao.append(el('span', '❓ ', 'provocacao-icone'), c('span', k.provocacao, 'provocacao'));
 
-  alvo.replaceChildren(regras, parte('Cartas', grade), rodada, provocacao);
+  secoesKit.push(parte('Cartas', grade), rodada, provocacao);
+  alvo.replaceChildren(...secoesKit);
 }
 
 function renderTravas() {
@@ -446,6 +528,28 @@ function renderImpressao(kit) {
     return Array(Math.min(Number(cc.quantidade) || 1, 20)).fill(cc);
   });
   const paginas = [];
+
+  if (k.tabuleiro && typeof k.tabuleiro === 'object' && lista(k.tabuleiro.casas).length) {
+    const paginaTab = el('div', null, 'pagina pagina-tabuleiro');
+    paginaTab.append(
+      el('h1', texto(k.tabuleiro.titulo || `${k.titulo} — Tabuleiro`)),
+      el('p', 'Imprima em folha A4. Use peões de papel, botões ou moedas para avançar pelas casas.', 'dica-tabuleiro')
+    );
+    const gradeTab = el('div', null, 'grade-tabuleiro-impressa');
+    lista(k.tabuleiro.casas).forEach((casa, idx) => {
+      const cDiv = el('div', null, 'casa-tabuleiro-impressa');
+      cDiv.append(
+        el('div', String(casa.numero ?? (idx + 1)), 'numero'),
+        el('div', texto(casa.nome || `Casa ${idx + 1}`), 'nome'),
+        el('div', texto(casa.efeito || ''), 'efeito')
+      );
+      gradeTab.append(cDiv);
+    });
+    paginaTab.append(gradeTab);
+    paginaTab.append(el('p', 'MesaInventada — Tabuleiro Print & Play (folha A4)', 'rodape-impressao'));
+    paginas.push(paginaTab);
+  }
+
   for (let i = 0; i < fisicas.length; i += 9) {
     const grade = el('div', null, 'grade-cartas');
     fisicas.slice(i, i + 9).forEach(cc => {
@@ -499,13 +603,27 @@ $('#kit').addEventListener('click', e => {
   const b = e.target.closest('button');
   if (!v || !b) return;
   if (!Array.isArray(v.kit.cartas)) v.kit.cartas = [];
-  if (b.dataset.remover != null) v.kit.cartas.splice(Number(b.dataset.remover), 1);
-  else if (b.dataset.acao === 'nova-carta') v.kit.cartas.push({ nome: 'Nova carta', texto: 'Escreva o efeito', quantidade: 1 });
-  else return;
+  if (b.dataset.remover != null) {
+    v.kit.cartas.splice(Number(b.dataset.remover), 1);
+  } else if (b.dataset.acao === 'nova-carta') {
+    v.kit.cartas.push({ nome: 'Nova carta', texto: 'Escreva o efeito', quantidade: 1 });
+  } else if (b.dataset.removerCasa != null && v.kit.tabuleiro && Array.isArray(v.kit.tabuleiro.casas)) {
+    v.kit.tabuleiro.casas.splice(Number(b.dataset.removerCasa), 1);
+  } else if (b.dataset.acao === 'nova-casa') {
+    if (!v.kit.tabuleiro || typeof v.kit.tabuleiro !== 'object') {
+      v.kit.tabuleiro = { titulo: 'Tabuleiro', tipo: 'trilha', casas: [] };
+    }
+    if (!Array.isArray(v.kit.tabuleiro.casas)) v.kit.tabuleiro.casas = [];
+    const prox = v.kit.tabuleiro.casas.length + 1;
+    v.kit.tabuleiro.casas.push({ numero: prox, nome: `Casa ${prox}`, efeito: 'Efeito da casa' });
+  } else return;
   gravar('mi:projeto', projeto);
   render();
 });
 
+document.querySelectorAll('input[name=modo-criacao]').forEach(i => i.addEventListener('change', atualizarModoCriacao));
+
 ajustarTema();
+atualizarModoCriacao();
 renderMecanicas();
 render();

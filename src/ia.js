@@ -30,36 +30,81 @@ export function orientacaoJogadores(jogadores) {
 function sistema(entrada) {
   const limite = LIMITE_TURNO[entrada.dificuldade] ?? 5;
   const jogadores = Number(entrada.jogadores) || 4;
+  const comTabuleiro = entrada.formato === 'tabuleiro';
   const regraRodada = jogadores === 1
     ? '- "rodada": 3 a 6 passos simulando uma rodada de teste solo com valores concretos (ex.: "Ana rola o dado: 2").'
     : `- "rodada": 3 a 6 passos simulando uma rodada de teste com jogadores nomeados coerentes com ${jogadores} participantes e valores concretos (ex.: "Ana rola o dado: 2").`;
-  return `Você é co-designer de jogos de cartas curtos na ferramenta MesaInventada.
+
+  const formatoJSON = comTabuleiro
+    ? '{"titulo":"","objetivo":"","preparacao":[""],"turno":[""],"fim":"","tabuleiro":{"titulo":"","tipo":"trilha","casas":[{"numero":1,"nome":"","efeito":""}]},"cartas":[{"nome":"","texto":"","quantidade":1}],"rodada":[""],"provocacao":""}'
+    : '{"titulo":"","objetivo":"","preparacao":[""],"turno":[""],"fim":"","cartas":[{"nome":"","texto":"","quantidade":1}],"rodada":[""],"provocacao":""}';
+
+  const regraTabuleiro = comTabuleiro
+    ? '- "tabuleiro": 8 a 16 "casas" (com "numero", "nome" e "efeito" com até 80 caracteres) que cabem em 1 folha A4. O jogo usa peões/marcadores sobre as casas.'
+    : '';
+
+  const guiaDificuldade = entrada.dificuldade === 'medio'
+    ? 'Permita decisões táticas, planejamento e pequenas sinergias.'
+    : 'Regras diretas, passos claros e objetivos, sem sinergias complexas.';
+
+  return `Você é co-designer de jogos de cartas e tabuleiro curtos na ferramenta MesaInventada.
 Você propõe um protótipo revisável, não um jogo final equilibrado.
 Responda SOMENTE com um objeto JSON, sem nada fora dele, neste formato:
-{"titulo":"","objetivo":"","preparacao":[""],"turno":[""],"fim":"","cartas":[{"nome":"","texto":"","quantidade":1}],"rodada":[""],"provocacao":""}
+${formatoJSON}
 Regras:
 - Português do Brasil, frases curtas e concretas.
-- Use só os materiais disponíveis. As cartas são de papel e só têm texto, sem imagens.
+- Use só os materiais disponíveis. As cartas e tabuleiro são de papel e só têm texto, sem imagens.
+- Dificuldade "${entrada.dificuldade || 'facil'}": ${guiaDificuldade}
 - "turno": no máximo ${limite} passos.
 - "cartas": de 4 a 12 tipos; "texto" com até 120 caracteres; soma das "quantidade" até 54.
-${regraRodada}
+${regraTabuleiro ? `${regraTabuleiro}\n` : ''}${regraRodada}
 - "provocacao": uma pergunta que desafia uma suposição deste jogo (ex.: precisa haver um vencedor?).`;
 }
 
-export function promptKit(entrada, mecanicas) {
-  const { tema, jogadores, duracao, materiais, dificuldade } = entrada;
+export function promptKit(entrada, mecanicas = []) {
+  const { tema, jogadores, duracao, materiais = ['papel'], dificuldade, modoCriacao, formato } = entrada;
+  const rotuloJogadores = `${jogadores} ${jogadores === 1 ? 'jogador' : 'jogadores'}`;
+  const rotuloFormato = formato === 'tabuleiro' ? 'Jogo com tabuleiro (A4) e cartas' : 'Jogo de cartas';
+
+  if (modoCriacao === 'livre') {
+    const mencaoMecanicas = mecanicas.length
+      ? `Mecânicas sugeridas para incorporar se fizerem sentido:\n${mecanicas.map(m => `- ${m.nome}: ${m.descricao}`).join('\n')}`
+      : 'Escolha e combine as mecânicas que melhor se adaptem à visão do jogador.';
+
+    const userLivre = [
+      '[MODO LIVRE - CO-CRIAÇÃO ABERTA]',
+      `Ideia ou visão do jogador:\n"${tema}"`,
+      '',
+      `Formato: ${rotuloFormato}`,
+      `Dificuldade / complexidade desejada: ${dificuldade === 'medio' ? 'médio' : 'fácil'}`,
+      `${rotuloJogadores} · ${duracao} minutos`,
+      orientacaoJogadores(jogadores),
+      `Materiais disponíveis: ${materiais.join(', ')}`,
+      '',
+      'Diretrizes:',
+      '- Dê vida à ideia livre do usuário criando um jogo coeso, intuitivo e jogável com papel e caneta.',
+      mencaoMecanicas,
+      formato === 'tabuleiro' ? '- Projete um tabuleiro em folha A4 com trilha de casas ou setores onde peões/marcadores se movem conforme as ações.' : '',
+    ].filter(Boolean).join('\n');
+
+    return [{ role: 'system', content: sistema(entrada) }, { role: 'user', content: userLivre }];
+  }
+
   const cabecalho = mecanicas.length > 1
     ? 'Mecânicas escolhidas (combine todas num só jogo):'
     : 'Mecânica escolhida (construa o jogo em torno dela):';
-  const rotuloJogadores = `${jogadores} ${jogadores === 1 ? 'jogador' : 'jogadores'}`;
+
   const user = [
     `Tema: ${tema}`,
+    `Formato: ${rotuloFormato}`,
     `${rotuloJogadores} · ${duracao} minutos · dificuldade ${dificuldade === 'medio' ? 'médio' : 'fácil'}`,
     orientacaoJogadores(jogadores),
     `Materiais disponíveis: ${materiais.join(', ')}`,
     cabecalho,
     ...mecanicas.map(m => `- ${m.nome}: ${m.descricao}`),
-  ].join('\n');
+    formato === 'tabuleiro' ? 'Crie um tabuleiro em folha A4 integrado às regras e às cartas.' : '',
+  ].filter(Boolean).join('\n');
+
   return [{ role: 'system', content: sistema(entrada) }, { role: 'user', content: user }];
 }
 
