@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MODELO_PADRAO, orientacaoJogadores, promptKit, promptComReferencias, promptRevisao, extrairJSON, mensagemDeErro, chamarLLM, chaveValida } from '../src/ia.js';
+import { MODELO_PADRAO, MODELO_PADRAO_OPENAI, orientacaoJogadores, promptKit, promptComReferencias, promptRevisao, extrairJSON, mensagemDeErro, chamarLLM, chaveValida, resolverModelo } from '../src/ia.js';
 import { catalogo } from '../src/mecanicas.js';
 import { obterReferencia, referenciaDeTexto } from '../src/referencias.js';
 import { kitExemplo, entradaExemplo } from './kit-exemplo.js';
@@ -80,11 +80,33 @@ test('chamarLLM transforma falhas em avisos legíveis', async () => {
   await assert.rejects(chamarLLM(args), /90 segundos/);
 });
 
-test('chaveValida aceita só a chave completa da OpenRouter', () => {
+test('chaveValida aceita chaves completas da OpenRouter e da OpenAI e recusa chaves truncadas', () => {
   assert.ok(chaveValida('sk-or-v1-' + 'a1'.repeat(32)));
-  for (const ruim of ['', 'sk-or-v1-a1b...9f2', 'sk-or-v1-a1b…9f2', 'sk-or-v1-abc', '"sk-or-v1-' + 'a1'.repeat(32) + '"',
-                      'sk-or-v1-' + 'a1'.repeat(16) + ' ' + 'a1'.repeat(16), 'sk-proj-' + 'a1'.repeat(32), 'minha chave'])
+  assert.ok(chaveValida('sk-proj-' + 'a1'.repeat(32)));
+  assert.ok(chaveValida('sk-proj-abc_123-XYZ' + 'a1'.repeat(16)));
+  assert.ok(chaveValida('sk-' + 'a1'.repeat(24)));
+  for (const ruim of ['', 'sk-or-v1-a1b...9f2', 'sk-or-v1-a1b…9f2', 'sk-proj-a1b...9f2', 'sk-or-v1-abc', 'sk-abc',
+                      '"sk-or-v1-' + 'a1'.repeat(32) + '"', 'sk-or-v1-' + 'a1'.repeat(16) + ' ' + 'a1'.repeat(16), 'minha chave'])
     assert.equal(chaveValida(ruim), false, ruim);
+});
+
+test('chamarLLM com chave da OpenAI usa endpoint e formato da OpenAI', async () => {
+  let pedido;
+  globalThis.fetch = async (url, opts) => {
+    pedido = { url, ...opts };
+    return { ok: true, status: 200, json: async () => ({ choices: [{ message: { content: JSON.stringify(kitExemplo) } }] }) };
+  };
+  const chaveOpenAI = 'sk-proj-' + 'a1'.repeat(24);
+  const kit = await chamarLLM({ chave: chaveOpenAI, modelo: MODELO_PADRAO, mensagens: [], semente: 7 });
+  assert.equal(kit.titulo, 'Oxigênio Zero');
+  assert.equal(pedido.url, 'https://api.openai.com/v1/chat/completions');
+  assert.equal(pedido.headers.Authorization, `Bearer ${chaveOpenAI}`);
+  const corpo = JSON.parse(pedido.body);
+  assert.equal(corpo.model, MODELO_PADRAO_OPENAI);
+  assert.equal(corpo.models, undefined);
+  assert.equal(corpo.seed, 7);
+  assert.deepEqual(corpo.response_format, { type: 'json_object' });
+  assert.equal(resolverModelo('gpt-4o', chaveOpenAI), 'gpt-4o');
 });
 
 test('promptKit aceita até cinco mecânicas e pede para combinar todas', () => {
@@ -134,4 +156,18 @@ test('promptComReferencias monta prompts para novas cartas, novas regras e jogo 
   assert.ok(pInspirado.includes('JOGO NOVO'));
   assert.ok(pInspirado.includes('Truco'));
   assert.ok(pInspirado.includes('Regra da turma'));
+});
+
+test('promptKit aceita modoCriacao livre e instrui sobre co-criação aberta', () => {
+  const pLivre = texto(promptKit({ ...entradaExemplo, modoCriacao: 'livre', tema: 'uma batalha épica de cozinheiros' }, []));
+  assert.ok(pLivre.includes('MODO LIVRE - CO-CRIAÇÃO ABERTA'));
+  assert.ok(pLivre.includes('uma batalha épica de cozinheiros'));
+  assert.ok(pLivre.includes('Escolha e combine as mecânicas que melhor se adaptem'));
+});
+
+test('promptKit aceita formato tabuleiro e inclui diretrizes para tabuleiro em folha A4', () => {
+  const pTab = texto(promptKit({ ...entradaExemplo, formato: 'tabuleiro' }, [catalogo[0]]));
+  assert.ok(pTab.includes('tabuleiro'));
+  assert.ok(pTab.includes('folha A4'));
+  assert.ok(pTab.includes('"tabuleiro"'));
 });

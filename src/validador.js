@@ -1,6 +1,6 @@
 // Módulo B — travas de equilíbrio (sem IA). Avisa; não bloqueia. Nunca lança: o kit vem do modelo.
 
-const LIMITE_TURNO = { facil: 3, medio: 5 };
+const LIMITE_TURNO = { facil: 3, leve: 3, medio: 4, dificil: 6, avancado: 6 };
 
 const PADROES_DISTRIBUICAO = [
   /(\d+)\s+cartas?\s+(?:para|a)\s+cada\s+(?:jogador|pessoa|participante)/gi,
@@ -81,6 +81,27 @@ export function validarKit(kit, entrada, mecanicas = [], opcoes = {}) {
     avisos.push('O jogo usa dado, mas "dado" não está nos materiais.');
   if (!materiais.includes('caneta') && /\b(caneta|l[aá]pis|anot)/i.test(textos))
     avisos.push('O jogo pede para anotar, mas "caneta" não está nos materiais.');
+
+  if (entrada.formato === 'tabuleiro' && !k.tabuleiro) {
+    avisos.push('O jogo foi configurado para ter tabuleiro, mas o kit não possui a seção "tabuleiro".');
+  }
+
+  if (k.tabuleiro && typeof k.tabuleiro === 'object') {
+    const casas = Array.isArray(k.tabuleiro.casas) ? k.tabuleiro.casas : [];
+    if (!casas.length) {
+      avisos.push('O tabuleiro não possui casas definidas.');
+    } else {
+      if (casas.length < 6 || casas.length > 24) {
+        avisos.push(`O tabuleiro tem ${casas.length} casas; o ideal para caber em 1 folha A4 é entre 6 e 20.`);
+      }
+      for (const casa of casas) {
+        const len = String(casa?.efeito ?? '').length;
+        if (len > 100) {
+          avisos.push(`A casa "${casa.nome || casa.numero}" tem efeito longo demais (${len}/100) para caber na folha do tabuleiro.`);
+        }
+      }
+    }
+  }
 
   return avisos;
 }
