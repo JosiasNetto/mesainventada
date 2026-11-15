@@ -2,7 +2,7 @@
 import { catalogo, mecanicaCompativel } from './src/mecanicas.js';
 import { materiaisExtras, combinarMateriais } from './src/materiais.js';
 import { normalizarJogadores, removerMecanicasIncompativeis, descreverFaixaJogadores } from './src/jogadores.js';
-import { MODELO_PADRAO, promptKit, promptRevisao, chamarLLM, chaveValida, AVISO_CHAVE } from './src/ia.js';
+import { MODELO_PADRAO, promptKit, promptRevisao, chamarLLM, chaveValida, AVISO_CHAVE, resolverModelo } from './src/ia.js';
 import { validarKit } from './src/validador.js';
 
 const $ = sel => document.querySelector(sel);
@@ -244,17 +244,25 @@ function mostrarErroChave(msg) {
 }
 
 function abrirConfig(erro = '') {
-  $('#chave').value = ler('mi:chave', '');
-  $('#modelo').value = ler('mi:modelo', MODELO_PADRAO);
+  const chaveSalva = ler('mi:chave', '');
+  $('#chave').value = chaveSalva;
+  $('#modelo').value = resolverModelo(ler('mi:modelo', MODELO_PADRAO), chaveSalva);
   mostrarErroChave(erro);
   $('#config').showModal();
 }
 $('#abrir-config').addEventListener('click', () => abrirConfig());
+$('#chave').addEventListener('input', () => {
+  const chave = $('#chave').value.trim();
+  if (!chave || chaveValida(chave)) mostrarErroChave('');
+  if (chaveValida(chave)) {
+    $('#modelo').value = resolverModelo($('#modelo').value, chave);
+  }
+});
 $('#salvar-config').addEventListener('click', e => {
   const chave = $('#chave').value.trim();
   if (chave && !chaveValida(chave)) { e.preventDefault(); mostrarErroChave(AVISO_CHAVE); return; }
   gravar('mi:chave', chave);
-  gravar('mi:modelo', $('#modelo').value.trim() || MODELO_PADRAO);
+  gravar('mi:modelo', resolverModelo($('#modelo').value.trim(), chave));
 });
 
 // Sem chave: abre a configuração. Chave salva fora do formato (ex.: copiada da lista do site): abre com a explicação.
