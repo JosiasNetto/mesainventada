@@ -3,8 +3,7 @@
 **Projeto:** MesaInventada - Criatividade Computacional 2026.2  
 **Responsavel:** Lucas  
 **Branch:** `feat/imagens-e-avaliacao-custo`  
-**Provedor de IA Avaliado:** OpenRouter API (`https://openrouter.ai/api/v1/chat/completions`)  
-**Orcamento da Chave Fornecida pelo Professor:** `US$ 4,00` (`limit_usd: 4.00`)  
+**Provedor de IA Avaliado:** OpenRouter API (`https://openrouter.ai/api/v1/chat/completions`)   
 **Cotacao de Referencia:** `US$ 1,00 = R$ 5,80`
 
 ---
