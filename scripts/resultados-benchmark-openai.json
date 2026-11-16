@@ -1,0 +1,145 @@
+{
+  "data": "2026-11-16T17:59:15.884Z",
+  "repeticoesTexto": 2,
+  "entrada": {
+    "tema": "Exploradores de um mercado flutuante numa cidade alagada",
+    "jogadores": 4,
+    "duracao": 20,
+    "materiais": [
+      "papel",
+      "caneta",
+      "dado"
+    ],
+    "dificuldade": "medio",
+    "formato": "cartas",
+    "modoCriacao": "guiado"
+  },
+  "resumo": [
+    {
+      "tipo": "texto",
+      "modelo": "gpt-5-nano",
+      "execucoes": [
+        {
+          "ms": 71763.366333,
+          "prompt": 430,
+          "completion": 12889,
+          "raciocinio": 12224,
+          "custoUsd": 0.0051771000000000005,
+          "tiposCarta": 11
+        },
+        {
+          "ms": 54632.135624999995,
+          "prompt": 430,
+          "completion": 10125,
+          "raciocinio": 9472,
+          "custoUsd": 0.0040715,
+          "tiposCarta": 10
+        }
+      ],
+      "ok": 2,
+      "msMedio": 63197.750979,
+      "msMin": 54632.135624999995,
+      "msMax": 71763.366333,
+      "custoMedioUsd": 0.0046243,
+      "custoMedioBrl": 0.026820939999999998
+    },
+    {
+      "tipo": "texto",
+      "modelo": "gpt-5-mini",
+      "execucoes": [
+        {
+          "ms": 63162.504091999996,
+          "prompt": 430,
+          "completion": 4621,
+          "raciocinio": 3712,
+          "custoUsd": 0.0093495,
+          "tiposCarta": 8
+        },
+        {
+          "ms": 63844.215203,
+          "prompt": 430,
+          "completion": 5201,
+          "raciocinio": 4288,
+          "custoUsd": 0.0105095,
+          "tiposCarta": 7
+        }
+      ],
+      "ok": 2,
+      "msMedio": 63503.359647499994,
+      "msMin": 63162.504091999996,
+      "msMax": 63844.215203,
+      "custoMedioUsd": 0.0099295,
+      "custoMedioBrl": 0.057591100000000006
+    },
+    {
+      "tipo": "texto",
+      "modelo": "gpt-5",
+      "execucoes": [
+        {
+          "ms": 95519.381383,
+          "prompt": 430,
+          "completion": 6132,
+          "raciocinio": 5248,
+          "custoUsd": 0.0618575,
+          "tiposCarta": 11
+        },
+        {
+          "ms": 111545.93554300001,
+          "prompt": 430,
+          "completion": 8092,
+          "raciocinio": 7296,
+          "custoUsd": 0.0814575,
+          "tiposCarta": 9
+        }
+      ],
+      "ok": 2,
+      "msMedio": 103532.658463,
+      "msMin": 95519.381383,
+      "msMax": 111545.93554300001,
+      "custoMedioUsd": 0.0716575,
+      "custoMedioBrl": 0.41561349999999997
+    },
+    {
+      "tipo": "imagem",
+      "modelo": "gpt-image-1-mini",
+      "quality": "low",
+      "size": "1024x1024",
+      "execucoes": [
+        {
+          "ms": 10060.593105999986,
+          "entrada": 152,
+          "saida": 272,
+          "custoUsd": 0.00248,
+          "kb": 185
+        }
+      ],
+      "ok": 1,
+      "msMedio": 10060.593105999986,
+      "msMin": 10060.593105999986,
+      "msMax": 10060.593105999986,
+      "custoMedioUsd": 0.00248,
+      "custoMedioBrl": 0.014384
+    },
+    {
+      "tipo": "imagem",
+      "modelo": "gpt-image-1-mini",
+      "quality": "medium",
+      "size": "1024x1024",
+      "execucoes": [
+        {
+          "ms": 13605.192806000006,
+          "entrada": 152,
+          "saida": 1056,
+          "custoUsd": 0.008752,
+          "kb": 247
+        }
+      ],
+      "ok": 1,
+      "msMedio": 13605.192806000006,
+      "msMin": 13605.192806000006,
+      "msMax": 13605.192806000006,
+      "custoMedioUsd": 0.008752,
+      "custoMedioBrl": 0.0507616
+    }
+  ]
+}

@@ -3,7 +3,7 @@
 **Projeto:** MesaInventada - Criatividade Computacional 2026.2  
 **Responsavel:** Lucas  
 **Branch:** `feat/imagens-e-avaliacao-custo`  
-**Provedor de IA Avaliado:** OpenRouter API (`https://openrouter.ai/api/v1/chat/completions`)   
+**Provedores de IA Avaliados:** OpenRouter API (`https://openrouter.ai/api/v1/chat/completions`) e OpenAI API (`https://api.openai.com/v1`, ver secao 5)   
 **Cotacao de Referencia:** `US$ 1,00 = R$ 5,80`
 
 ---
@@ -82,3 +82,70 @@ Um jogo gerado na **MesaInventada** possui entre **4 e 12 tipos de carta** (medi
    - **Impacto no Custo:** Em um fluxo criativo normal, um grupo gera e descarta ou revisa regras 3 a 5 vezes antes de chegar na versao final para impressao. Se toda geracao de texto disparasse 6 imagens automaticamente, cada teste custaria `US$ 0,20` (consumindo `US$ 1,00` em apenas 5 tentativas). Com o acionamento por botao apenas quando o baralho esta aprovado, o custo durante a fase de experimentacao de regras cai para **US$ 0,00**, multiplicando por **4x a 5x** a durabilidade do orcamento de `US$ 4,00` da chave do professor.
 2. **Preservacao automatica das ilustracoes nas revisoes (`app.js`):**
    - Quando o usuario relata uma dificuldade de playtest e clica em **Revisar com IA**, o `app.js` reaproveita automaticamente as imagens das cartas cujo nome permaneceu igual na nova versao (`v2`, `v3`), evitando cobrar novamente por ilustracoes ja geradas.
+
+---
+
+## 5. Medicoes Empiricas na Plataforma da OpenAI
+
+Como o `src/ia.js` tambem aceita chaves da OpenAI (`sk-...` / `sk-proj-...`), medimos tempo e custo dos modelos de texto e de imagem disponiveis diretamente na plataforma da OpenAI.
+
+### 5.1. Metodologia
+
+- **Script reproduzivel:** `scripts/benchmark-openai.js` (resultados brutos em `scripts/resultados-benchmark-openai.json`). Rodar com `node scripts/benchmark-openai.js [repeticoes]`; a chave vem de `OPENAI_API_KEY` ou de um `.env` na raiz (ignorado pelo git).
+- **Prompts reais do app:** texto via `promptKit` (tema "Exploradores de um mercado flutuante numa cidade alagada", 4 jogadores, 20 min, dificuldade `medio`, mecanicas *Colecao de conjuntos* + *Gestao de recursos escassos*, `response_format: json_object`); imagem via `promptImagemCarta` (carta "Barqueiro Astuto").
+- **Modelos testados:** o script consulta `/v1/models` e mede apenas os modelos liberados para a chave. Na chave do projeto estavam disponiveis **`gpt-5-nano`, `gpt-5-mini`, `gpt-5`** (texto) e **`gpt-image-1-mini`** (imagem). `gpt-4o-mini`, `gpt-4.1-*`, `gpt-4o`, `o4-mini`, `gpt-image-1`, `dall-e-3` e `dall-e-2` nao estavam habilitados e ficaram fora da medicao.
+- **Tempo:** latencia ponta a ponta da requisicao HTTP (sem streaming). Texto: 2 execucoes por modelo; imagem: 1 execucao por nivel de qualidade.
+- **Custo:** a API da OpenAI nao devolve custo, entao ele foi calculado a partir do `usage` retornado e dos precos oficiais (Standard tier, conferidos em `developers.openai.com/api/docs/pricing` em 16/11/2026):
+
+| Modelo | Entrada (US$/1M tokens) | Saida (US$/1M tokens) |
+|---|---:|---:|
+| `gpt-5-nano` | 0,05 | 0,40 |
+| `gpt-5-mini` | 0,25 | 2,00 |
+| `gpt-5` | 1,25 | 10,00 |
+| `gpt-image-1-mini` | 2,00 (texto) | 8,00 (imagem) |
+
+- **Data da medicao:** 16/11/2026.
+
+### 5.2. Texto: Criacao do Kit Inicial
+
+| Modelo (OpenAI) | Prompt Tokens | Completion Tokens | Tokens de Raciocinio | Tipos de Carta Gerados | Tempo Medio (min - max) | Custo Medio (US$) | Custo Medio (R$) |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| **`gpt-5-nano`** | 430 | 10.125 - 12.889 | 9.472 - 12.224 | 10 - 11 | **63,2 s** (54,6 - 71,8) | **US$ 0,0046** | **R$ 0,027** |
+| **`gpt-5-mini`** | 430 | 4.621 - 5.201 | 3.712 - 4.288 | 7 - 8 | **63,5 s** (63,2 - 63,8) | **US$ 0,0099** | **R$ 0,058** |
+| **`gpt-5`** | 430 | 6.132 - 8.092 | 5.248 - 7.296 | 9 - 11 | **103,5 s** (95,5 - 111,5) | **US$ 0,0717** | **R$ 0,416** |
+
+Todas as 6 execucoes devolveram JSON valido no formato do kit (`extrairJSON` sem erro).
+
+### 5.3. Imagem: Ilustracao de uma Carta
+
+| Modelo (OpenAI) | Qualidade / Tamanho | Tokens de Entrada | Tokens de Imagem (saida) | Payload (JPEG) | Tempo por Carta | Custo por Carta (US$) | Custo por Carta (R$) |
+|---|---|---:|---:|---:|---:|---:|---:|
+| **`gpt-image-1-mini`** | `low` · 1024x1024 | 152 | 272 | 185 KB | **10,06 s** | **US$ 0,0025** | **R$ 0,014** |
+| **`gpt-image-1-mini`** | `medium` · 1024x1024 | 152 | 1.056 | 247 KB | **13,61 s** | **US$ 0,0088** | **R$ 0,051** |
+
+### 5.4. Tempo e Custo de um Artefato Completo com a OpenAI
+
+Estimativa com geracao sequencial (1 kit de texto + N ilustracoes, como no botao `🎨 Ilustrar todas as cartas`), usando as medias acima:
+
+| Cenario | Texto | Imagens | Tempo Total Estimado | Custo Total (US$) | Custo Total (R$) | Artefatos em US$ 4,00 |
+|---|---|---|---:|---:|---:|---:|
+| Somente texto | `gpt-5-nano` | - | ~63 s | US$ 0,0046 | R$ 0,03 | 865 |
+| Somente texto | `gpt-5-mini` | - | ~64 s | US$ 0,0099 | R$ 0,06 | 402 |
+| Somente texto | `gpt-5` | - | ~104 s | US$ 0,0717 | R$ 0,42 | 55 |
+| Kit medio (6 cartas) | `gpt-5-nano` | 6 x `low` | ~124 s | US$ 0,0195 | R$ 0,11 | 205 |
+| **Kit medio (6 cartas)** | **`gpt-5-mini`** | **6 x `low`** | **~124 s** | **US$ 0,0248** | **R$ 0,14** | **161** |
+| Kit medio (6 cartas) | `gpt-5-mini` | 6 x `medium` | ~145 s | US$ 0,0624 | R$ 0,36 | 64 |
+| Kit medio (6 cartas) | `gpt-5` | 6 x `medium` | ~185 s | US$ 0,1242 | R$ 0,72 | 32 |
+| Kit maximo (12 cartas) | `gpt-5-mini` | 12 x `low` | ~184 s | US$ 0,0397 | R$ 0,23 | 100 |
+| Kit maximo (12 cartas) | `gpt-5-mini` | 12 x `medium` | ~227 s | US$ 0,1149 | R$ 0,67 | 34 |
+
+### 5.5. Conclusoes da Medicao na OpenAI
+
+1. **Custo muito baixo, tempo alto.** Os modelos GPT-5 sao baratos por kit (de US$ 0,005 a US$ 0,07), mas levam de **~1 a ~2 minutos** para responder, contra 3 a 19 s dos modelos medidos na OpenRouter (secao 2.1). O motivo sao os **tokens de raciocinio**: entre 80% e 95% dos `completion_tokens` sao raciocinio interno, cobrados como saida mas invisiveis no kit.
+2. **`gpt-5-nano` gasta mais tokens que o `gpt-5-mini`.** O nano raciocinou ~2,4x mais (ate 12.889 tokens) e mesmo assim saiu pela metade do preco, mas com o mesmo tempo (~63 s). O **`gpt-5-mini`** teve o tempo mais estavel (63,2 - 63,8 s) e e o melhor equilibrio para o texto.
+3. **`gpt-5` ultrapassa o timeout do app.** As duas execucoes (95,5 s e 111,5 s) passaram dos **90 s** de `AbortSignal.timeout(90_000)` em `chamarLLMComMetricas`; no app, o usuario receberia "A IA demorou mais de 90 segundos". O `gpt-5` nao e viavel com o timeout atual.
+4. **`gpt-image-1-mini` em `low` e a ilustracao mais barata medida no projeto:** US$ 0,0025 por carta, **13x mais barata** que o `google/gemini-3.1-flash-lite-image` da OpenRouter (US$ 0,0336, secao 2.2), porem ~2x mais lenta (10,1 s contra 4,97 s). Em `medium` o custo sobe 3,5x (US$ 0,0088) para +3,5 s por carta.
+5. **Pontos de atencao para usar a OpenAI no app:**
+   - O modelo padrao para chaves OpenAI (`MODELO_PADRAO_OPENAI = 'gpt-4o-mini'`) **nao estava habilitado** na chave testada; com essa chave, o usuario precisaria configurar `gpt-5-mini` em ⚙ Configurar.
+   - `gerarImagemCarta` hoje chama apenas a OpenRouter (`modalities: ['image','text']`); para usar `gpt-image-1-mini` com chave OpenAI seria preciso chamar `/v1/images/generations`, como no script de benchmark.
+   - Para reduzir o tempo do texto, vale testar `reasoning_effort: 'minimal'` ou `'low'` nos modelos GPT-5 (nao medido aqui), ja que o raciocinio domina a latencia e o custo.
