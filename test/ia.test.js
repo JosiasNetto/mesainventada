@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   MODELO_PADRAO,
+  MODELO_PADRAO_OPENAI,
   MODELO_IMAGEM_PADRAO,
   orientacaoJogadores,
   promptKit,
@@ -15,7 +16,9 @@ import {
   chamarLLMComMetricas,
   gerarImagemCarta,
   chaveValida,
+  resolverModelo,
 } from '../src/ia.js';
+
 import { catalogo } from '../src/mecanicas.js';
 import { obterReferencia, referenciaDeTexto } from '../src/referencias.js';
 import { kitExemplo, entradaExemplo } from './kit-exemplo.js';
@@ -95,11 +98,33 @@ test('chamarLLM transforma falhas em avisos legíveis', async () => {
   await assert.rejects(chamarLLM(args), /90 segundos/);
 });
 
-test('chaveValida aceita só a chave completa da OpenRouter', () => {
+test('chaveValida aceita chaves completas da OpenRouter e da OpenAI e recusa chaves truncadas', () => {
   assert.ok(chaveValida('sk-or-v1-' + 'a1'.repeat(32)));
-  for (const ruim of ['', 'sk-or-v1-a1b...9f2', 'sk-or-v1-a1b…9f2', 'sk-or-v1-abc', '"sk-or-v1-' + 'a1'.repeat(32) + '"',
-                      'sk-or-v1-' + 'a1'.repeat(16) + ' ' + 'a1'.repeat(16), 'sk-proj-' + 'a1'.repeat(32), 'minha chave'])
+  assert.ok(chaveValida('sk-proj-' + 'a1'.repeat(32)));
+  assert.ok(chaveValida('sk-proj-abc_123-XYZ' + 'a1'.repeat(16)));
+  assert.ok(chaveValida('sk-' + 'a1'.repeat(24)));
+  for (const ruim of ['', 'sk-or-v1-a1b...9f2', 'sk-or-v1-a1b…9f2', 'sk-proj-a1b...9f2', 'sk-or-v1-abc', 'sk-abc',
+                      '"sk-or-v1-' + 'a1'.repeat(32) + '"', 'sk-or-v1-' + 'a1'.repeat(16) + ' ' + 'a1'.repeat(16), 'minha chave'])
     assert.equal(chaveValida(ruim), false, ruim);
+});
+
+test('chamarLLM com chave da OpenAI usa endpoint e formato da OpenAI', async () => {
+  let pedido;
+  globalThis.fetch = async (url, opts) => {
+    pedido = { url, ...opts };
+    return { ok: true, status: 200, json: async () => ({ choices: [{ message: { content: JSON.stringify(kitExemplo) } }] }) };
+  };
+  const chaveOpenAI = 'sk-proj-' + 'a1'.repeat(24);
+  const kit = await chamarLLM({ chave: chaveOpenAI, modelo: MODELO_PADRAO, mensagens: [], semente: 7 });
+  assert.equal(kit.titulo, 'Oxigênio Zero');
+  assert.equal(pedido.url, 'https://api.openai.com/v1/chat/completions');
+  assert.equal(pedido.headers.Authorization, `Bearer ${chaveOpenAI}`);
+  const corpo = JSON.parse(pedido.body);
+  assert.equal(corpo.model, MODELO_PADRAO_OPENAI);
+  assert.equal(corpo.models, undefined);
+  assert.equal(corpo.seed, 7);
+  assert.deepEqual(corpo.response_format, { type: 'json_object' });
+  assert.equal(resolverModelo('gpt-4o', chaveOpenAI), 'gpt-4o');
 });
 
 test('promptKit aceita até cinco mecânicas e pede para combinar todas', () => {
@@ -225,4 +250,5 @@ test('gerarImagemCarta envia modalities com image e devolve imagemUrl e métrica
   assert.equal(res.imagemUrl, imgFake);
   assert.equal(res.metricas.imageTokens, 1120);
   assert.equal(res.metricas.custoUsd, 0.0336);
+
 });

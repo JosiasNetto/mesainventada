@@ -67,7 +67,9 @@ npm test   # Node 22+, sem dependências
 - **Outros materiais.** Além de papel, caneta e dado, a pessoa pode escrever materiais extras; eles entram no prompt e nas travas.
 - **Tema em caixa ampla.** O campo de tema virou uma caixa de texto que cresce com o conteúdo, no estilo dos chats de LLM, para receber quantos detalhes forem necessários.
 - **Provocação.** A IA devolve uma pergunta que desafia uma suposição do jogo, conforme o compromisso de "incorporar provocações e contrapontos" do relatório.
-- **Dificuldade limita o turno.** "fácil" permite no máximo 3 passos no turno, e "médio" permite no máximo 5.
+- **Dificuldade limita o turno.** "fácil" permite no máximo 3 passos no turno (direto e intuitivo), e "médio" permite no máximo 5 passos (decisões táticas e sinergias).
+- **Modo Livre vs. Modo Guiado.** Dá a opção de escolher entre criação guiada (paramétrica, escolhendo mecânicas e restrições) ou criação livre (prompt aberto, onde a IA deduz dinâmicas, jogadores ideais e materiais a partir da narrativa).
+- **Opção de Tabuleiro em folha A4.** Possibilidade de criar jogos com tabuleiro (trilhas de casas ou setores) integrado às cartas e regras, com impressão diagramada para Print & Play.
 - **Chave da própria pessoa (BYOK).** Não há chave do grupo embutida, e a tela explica como obter uma chave gratuita.
 - **Jogadores de 1 a 8.** O formulário, o filtro de mecânicas, o prompt e as travas tratam desde modo solo (1 pessoa) até mesas maiores (8 pessoas), avisando quando alguma mecânica deixa de ser compatível.
 - **Ilustrações de cartas sob demanda.** Cada carta tem um botão para gerar ou trocar sua ilustração via OpenRouter (`openai/gpt-5-image-mini` / `google/gemini-3.1-flash-lite-image`), além do botão "Ilustrar todas as cartas", com compactação automática em JPEG para caber no `localStorage` e impressão no PDF A4.

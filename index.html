@@ -35,13 +35,30 @@
 
     <main class="colunas">
       <form id="formulario" class="coluna-entrada" novalidate>
-        <section class="bloco">
-          <h2><label for="tema">1. Qual o tema?</label></h2>
-          <textarea id="tema" rows="5" required placeholder="jogo cooperativo sobre espaço... conte o clima, os personagens, o que você quer que aconteça na mesa. Quanto mais detalhes, melhor." autocomplete="off"></textarea>
-          <p class="dica">Escreva à vontade: a caixa cresce conforme você digita.</p>
+        <section class="bloco bloco-modo">
+          <div class="seletor-modo" role="radiogroup" aria-label="Modo de criação">
+            <label class="opcao-modo modo-ativo">
+              <input type="radio" name="modo-criacao" value="guiado" checked>
+              <span>🎯 <strong>Modo Guiado</strong></span>
+            </label>
+            <label class="opcao-modo">
+              <input type="radio" name="modo-criacao" value="livre">
+              <span>✨ <strong>Modo Livre (Prompt Aberto)</strong></span>
+            </label>
+          </div>
+          <p id="modo-descricao" class="dica">Modo Guiado: personalize tema, público e selecione mecânicas do catálogo.</p>
         </section>
 
         <section class="bloco">
+          <h2><label id="rotulo-tema" for="tema">1. Qual o tema?</label></h2>
+          <textarea id="tema" rows="5" required placeholder="jogo cooperativo sobre espaço... conte o clima, os personagens, o que você quer que aconteça na mesa. Quanto mais detalhes, melhor." autocomplete="off"></textarea>
+          <p id="dica-tema" class="dica">Escreva à vontade: a caixa cresce conforme você digita.</p>
+          <div id="info-modo-livre" class="nota-amarela modo-livre-info" hidden>
+            ✨ <strong>Modo Livre ativo:</strong> descreva livremente sua ideia acima. A IA cuidará da dinâmica, jogadores ideais, materiais e mecânicas!
+          </div>
+        </section>
+
+        <section id="secao-jogadores" class="bloco">
           <h2>2. Quem vai jogar?</h2>
           <div class="linha">
             <label class="campo-numero"><input id="jogadores" type="number" min="1" max="8" value="4"> pessoas</label>
@@ -59,7 +76,7 @@
           <button type="button" id="exemplo" class="nota-amarela">exemplo: "cooperativo no espaço, 4 pessoas, 20 min"</button>
         </section>
 
-        <section class="bloco">
+        <section id="secao-mecanicas" class="bloco">
           <h2>3. Escolha a mecânica</h2>
           <p class="dica">Veja o catálogo completo e escolha de 1 a 5 para combinar.</p>
           <div id="mecanicas" class="mecanicas"></div>
@@ -70,11 +87,20 @@
         </section>
 
         <section class="bloco">
-          <fieldset class="dificuldade">
-            <legend>dificuldade</legend>
-            <label><input type="radio" name="dificuldade" value="facil" checked> fácil</label>
-            <label><input type="radio" name="dificuldade" value="medio"> médio</label>
-          </fieldset>
+          <div class="linha-opcoes">
+            <fieldset class="formato-jogo">
+              <legend>formato do jogo</legend>
+              <label><input type="radio" name="formato" value="cartas" checked> 🃏 cartas</label>
+              <label><input type="radio" name="formato" value="tabuleiro"> 🗺️ com tabuleiro</label>
+            </fieldset>
+
+            <fieldset class="dificuldade">
+              <legend>complexidade do jogo (carga de regras)</legend>
+              <label><input type="radio" name="dificuldade" value="facil" checked> leve (fácil) <small class="rotulo-dica">(até 3 passos · efeitos imediatos)</small></label>
+              <label><input type="radio" name="dificuldade" value="medio"> médio <small class="rotulo-dica">(até 4 passos · efeitos condicionais)</small></label>
+              <label><input type="radio" name="dificuldade" value="dificil"> avançado (difícil) <small class="rotulo-dica">(até 6 passos · fases e combos)</small></label>
+            </fieldset>
+          </div>
           <button type="submit" id="criar" class="botao-principal">CRIAR JOGO</button>
         </section>
       </form>
@@ -125,14 +151,14 @@
   <dialog id="config">
     <form method="dialog">
       <h2>Configurar IA</h2>
-      <p>Para usar a IA você precisa de uma chave gratuita da OpenRouter:</p>
+      <p>Para usar a IA você pode colar uma chave da <strong>OpenRouter</strong> (gratuita) ou da <strong>OpenAI API</strong>:</p>
       <ol>
-        <li>Crie uma conta em <a href="https://openrouter.ai" target="_blank" rel="noopener">openrouter.ai</a> (dá para entrar com Google ou GitHub).</li>
-        <li>Abra <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a> e clique em "Create API Key". Copie a chave inteira na hora: ela só aparece uma vez.</li>
-        <li>Cole a chave abaixo. Modelos terminados em ":free" não cobram nada.</li>
+        <li><strong>OpenRouter:</strong> crie uma conta em <a href="https://openrouter.ai" target="_blank" rel="noopener">openrouter.ai</a>, abra <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a> e clique em "Create API Key".</li>
+        <li><strong>OpenAI:</strong> abra <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a> e clique em "Create new secret key".</li>
+        <li>Copie a chave inteira na hora (ela só aparece uma vez) e cole abaixo.</li>
       </ol>
-      <label class="campo">Chave da OpenRouter
-        <input id="chave" type="password" autocomplete="off" placeholder="sk-or-...">
+      <label class="campo">Chave da API (OpenRouter ou OpenAI)
+        <input id="chave" type="password" autocomplete="off" placeholder="sk-or-... ou sk-proj-...">
       </label>
       <label class="campo">Modelo de texto
         <input id="modelo" type="text" autocomplete="off">
@@ -140,7 +166,8 @@
       <label class="campo">Modelo de imagem (cartas)
         <input id="modelo-imagem" type="text" autocomplete="off">
       </label>
-      <p class="dica">A chave fica salva só neste navegador e é enviada apenas para a OpenRouter.</p>
+      <p class="dica">A chave fica salva só neste navegador e é enviada apenas para o provedor correspondente (OpenRouter ou OpenAI).</p>
+
       <p id="erro-chave" class="erro-chave" role="alert" hidden></p>
       <div class="linha">
         <button value="salvar" id="salvar-config" class="botao-principal">Salvar</button>

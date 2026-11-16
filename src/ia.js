@@ -3,18 +3,38 @@ import { formatarReferenciaParaPrompt } from './referencias.js';
 import { extrairMetricas } from './custos.js';
 
 export const MODELO_PADRAO = 'nvidia/nemotron-3.5-super-vl:free';
+export const MODELO_PADRAO_OPENAI = 'gpt-4o-mini';
 // Modelos grátis saturam ou somem sem aviso; a OpenRouter tenta estes, em ordem, se o escolhido falhar.
 // ponytail: lista fixa de 3 (limite seguro da API); revisar os ":free" disponíveis antes de cada entrega.
 const RESERVAS = ['openrouter/free', 'google/gemma-4-31b-it:free'];
 export const MODELO_IMAGEM_PADRAO = 'google/gemini-3.1-flash-lite-image';
 const RESERVAS_IMAGEM = ['openai/gpt-5-image-mini', 'google/gemini-2.5-flash-image'];
 const URL_API = 'https://openrouter.ai/api/v1/chat/completions';
-const LIMITE_TURNO = { facil: 3, medio: 5 };
+const URL_API_OPENAI = 'https://api.openai.com/v1/chat/completions';
+const LIMITE_TURNO = { facil: 3, leve: 3, medio: 4, dificil: 6, avancado: 6 };
 
-// A OpenRouter só mostra a chave inteira na criação; a lista de chaves mostra um pedaço ("sk-or-v1-a1b...9f2").
-export const chaveValida = chave => /^sk-or-v1-[A-Za-z0-9]{32,}$/.test(String(chave ?? ''));
-export const AVISO_CHAVE = 'Essa não parece uma chave completa da OpenRouter. Ela começa com "sk-or-v1-" e tem mais de 70 caracteres. '
-  + 'O site só mostra a chave inteira uma vez, na hora de criar: se você copiou da lista de chaves, crie uma nova em openrouter.ai/keys e copie pelo botão de copiar.';
+export const ehChaveOpenRouter = chave => /^sk-or-v1-[A-Za-z0-9_-]{32,}$/.test(String(chave ?? ''));
+export const ehChaveOpenAI = chave => /^sk-(?!or-)[A-Za-z0-9_-]{20,}$/.test(String(chave ?? ''));
+
+// Aceita chaves completas da OpenRouter ("sk-or-v1-...") e da OpenAI ("sk-...", "sk-proj-..."), recusando chaves truncadas com "...".
+export const chaveValida = chave => ehChaveOpenRouter(chave) || ehChaveOpenAI(chave);
+export const AVISO_CHAVE = 'Essa não parece uma chave completa da OpenRouter ou da OpenAI. '
+  + 'Chaves da OpenRouter começam com "sk-or-v1-" e chaves da OpenAI começam com "sk-" (como "sk-proj-..."). '
+  + 'Os sites só mostram a chave inteira uma vez, na hora de criar: se você copiou da lista de chaves, crie uma nova e copie pelo botão de copiar.';
+
+export function resolverModelo(modelo, chave) {
+  const m = String(modelo ?? '').trim();
+  if (ehChaveOpenAI(chave)) {
+    if (!m || m === MODELO_PADRAO || m.includes('/') || m.endsWith(':free')) {
+      return MODELO_PADRAO_OPENAI;
+    }
+    return m;
+  }
+  if (!m || (ehChaveOpenRouter(chave) && m === MODELO_PADRAO_OPENAI)) {
+    return MODELO_PADRAO;
+  }
+  return m;
+}
 
 export function orientacaoJogadores(jogadores) {
   if (jogadores === 1) {
@@ -33,36 +53,86 @@ export function orientacaoJogadores(jogadores) {
 function sistema(entrada) {
   const limite = LIMITE_TURNO[entrada.dificuldade] ?? 5;
   const jogadores = Number(entrada.jogadores) || 4;
+  const comTabuleiro = entrada.formato === 'tabuleiro';
   const regraRodada = jogadores === 1
     ? '- "rodada": 3 a 6 passos simulando uma rodada de teste solo com valores concretos (ex.: "Ana rola o dado: 2").'
     : `- "rodada": 3 a 6 passos simulando uma rodada de teste com jogadores nomeados coerentes com ${jogadores} participantes e valores concretos (ex.: "Ana rola o dado: 2").`;
-  return `Você é co-designer de jogos de cartas curtos na ferramenta MesaInventada.
+
+  const formatoJSON = comTabuleiro
+    ? '{"titulo":"","objetivo":"","preparacao":[""],"turno":[""],"fim":"","tabuleiro":{"titulo":"","tipo":"trilha","casas":[{"numero":1,"nome":"","efeito":""}]},"cartas":[{"nome":"","texto":"","quantidade":1}],"rodada":[""],"provocacao":""}'
+    : '{"titulo":"","objetivo":"","preparacao":[""],"turno":[""],"fim":"","cartas":[{"nome":"","texto":"","quantidade":1}],"rodada":[""],"provocacao":""}';
+
+  const regraTabuleiro = comTabuleiro
+    ? '- "tabuleiro": 8 a 16 "casas" (com "numero", "nome" e "efeito" com até 80 caracteres) que cabem em 1 folha A4. O jogo usa peões/marcadores sobre as casas.'
+    : '';
+
+  const DIRETRIZES_COMPLEXIDADE = {
+    facil: 'Leve (Fácil): turnos diretos (até 3 passos), cartas com efeitos imediatos (ex.: "Compre 1 carta", "Ganhe 2 recursos"), sem dependência complexa entre jogadores.',
+    leve: 'Leve (Fácil): turnos diretos (até 3 passos), cartas com efeitos imediatos (ex.: "Compre 1 carta", "Ganhe 2 recursos"), sem dependência complexa entre jogadores.',
+    medio: 'Médio: turnos encadeados (até 4 passos), cartas com efeitos condicionais simples ("Se tiver X, faça Y").',
+    dificil: 'Avançado (Difícil): fases distintas no turno (ex.: Fase de Ação e Fase de Compra, até 6 passos no turno), com combos e sinergias entre cartas.',
+    avancado: 'Avançado (Difícil): fases distintas no turno (ex.: Fase de Ação e Fase de Compra, até 6 passos no turno), com combos e sinergias entre cartas.',
+  };
+  const guiaDificuldade = DIRETRIZES_COMPLEXIDADE[entrada.dificuldade] || DIRETRIZES_COMPLEXIDADE.facil;
+
+  return `Você é co-designer de jogos de cartas e tabuleiro curtos na ferramenta MesaInventada.
 Você propõe um protótipo revisável, não um jogo final equilibrado.
 Responda SOMENTE com um objeto JSON, sem nada fora dele, neste formato:
-{"titulo":"","objetivo":"","preparacao":[""],"turno":[""],"fim":"","cartas":[{"nome":"","texto":"","quantidade":1}],"rodada":[""],"provocacao":""}
+${formatoJSON}
 Regras:
 - Português do Brasil, frases curtas e concretas.
-- Use só os materiais disponíveis. As cartas são de papel e só têm texto, sem imagens.
+- Use só os materiais disponíveis. As cartas e tabuleiro são de papel e só têm texto, sem imagens.
+- Dificuldade "${entrada.dificuldade || 'facil'}": ${guiaDificuldade}
 - "turno": no máximo ${limite} passos.
 - "cartas": de 4 a 12 tipos; "texto" com até 120 caracteres; soma das "quantidade" até 54.
-${regraRodada}
+${regraTabuleiro ? `${regraTabuleiro}\n` : ''}${regraRodada}
 - "provocacao": uma pergunta que desafia uma suposição deste jogo (ex.: precisa haver um vencedor?).`;
 }
 
-export function promptKit(entrada, mecanicas) {
-  const { tema, jogadores, duracao, materiais, dificuldade } = entrada;
+export function promptKit(entrada, mecanicas = []) {
+  const { tema, jogadores, duracao, materiais = ['papel'], dificuldade, modoCriacao, formato } = entrada;
+  const rotuloJogadores = `${jogadores} ${jogadores === 1 ? 'jogador' : 'jogadores'}`;
+  const rotuloFormato = formato === 'tabuleiro' ? 'Jogo com tabuleiro (A4) e cartas' : 'Jogo de cartas';
+
+  if (modoCriacao === 'livre') {
+    const mencaoMecanicas = mecanicas.length
+      ? `Mecânicas sugeridas para incorporar se fizerem sentido:\n${mecanicas.map(m => `- ${m.nome}: ${m.descricao}`).join('\n')}`
+      : 'Escolha e combine as mecânicas que melhor se adaptem à visão do jogador.';
+
+    const userLivre = [
+      '[MODO LIVRE - CO-CRIAÇÃO ABERTA]',
+      `Ideia ou visão do jogador:\n"${tema}"`,
+      '',
+      `Formato: ${rotuloFormato}`,
+      `Dificuldade / complexidade desejada: ${dificuldade === 'medio' ? 'médio' : 'fácil'}`,
+      `${rotuloJogadores} · ${duracao} minutos`,
+      orientacaoJogadores(jogadores),
+      `Materiais disponíveis: ${materiais.join(', ')}`,
+      '',
+      'Diretrizes:',
+      '- Dê vida à ideia livre do usuário criando um jogo coeso, intuitivo e jogável com papel e caneta.',
+      mencaoMecanicas,
+      formato === 'tabuleiro' ? '- Projete um tabuleiro em folha A4 com trilha de casas ou setores onde peões/marcadores se movem conforme as ações.' : '',
+    ].filter(Boolean).join('\n');
+
+    return [{ role: 'system', content: sistema(entrada) }, { role: 'user', content: userLivre }];
+  }
+
   const cabecalho = mecanicas.length > 1
     ? 'Mecânicas escolhidas (combine todas num só jogo):'
     : 'Mecânica escolhida (construa o jogo em torno dela):';
-  const rotuloJogadores = `${jogadores} ${jogadores === 1 ? 'jogador' : 'jogadores'}`;
+
   const user = [
     `Tema: ${tema}`,
+    `Formato: ${rotuloFormato}`,
     `${rotuloJogadores} · ${duracao} minutos · dificuldade ${dificuldade === 'medio' ? 'médio' : 'fácil'}`,
     orientacaoJogadores(jogadores),
     `Materiais disponíveis: ${materiais.join(', ')}`,
     cabecalho,
     ...mecanicas.map(m => `- ${m.nome}: ${m.descricao}`),
-  ].join('\n');
+    formato === 'tabuleiro' ? 'Crie um tabuleiro em folha A4 integrado às regras e às cartas.' : '',
+  ].filter(Boolean).join('\n');
+
   return [{ role: 'system', content: sistema(entrada) }, { role: 'user', content: user }];
 }
 
@@ -188,27 +258,35 @@ export function extrairImagem(dados) {
 }
 
 export async function chamarLLMComMetricas({ chave, modelo, mensagens, semente }) {
-  const models = [...new Set([modelo, MODELO_PADRAO, ...RESERVAS])].slice(0, 3);
+  const usarOpenAI = ehChaveOpenAI(chave);
+  const modeloResolvido = resolverModelo(modelo, chave);
+  const models = [...new Set([modeloResolvido, MODELO_PADRAO, ...RESERVAS])].slice(0, 3);
+  const url = usarOpenAI ? URL_API_OPENAI : URL_API;
+  const nomeProvedor = usarOpenAI ? 'OpenAI' : 'OpenRouter';
+  const corpo = usarOpenAI
+    ? { model: modeloResolvido, messages: mensagens, seed: semente, response_format: { type: 'json_object' } }
+    : { models, messages: mensagens, seed: semente, response_format: { type: 'json_object' } };
   const inicio = Date.now();
+
   let res;
   try {
-    res = await fetch(URL_API, {
+    res = await fetch(url, {
       method: 'POST',
       headers: { Authorization: `Bearer ${chave}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ models, messages: mensagens, seed: semente, response_format: { type: 'json_object' } }),
+      body: JSON.stringify(corpo),
       signal: AbortSignal.timeout(90_000),
     });
   } catch (e) {
     if (e?.name === 'TimeoutError') throw new Error('A IA demorou mais de 90 segundos. Tente de novo ou troque o modelo em ⚙ Configurar.');
-    throw new Error('Sem conexão com a OpenRouter. Verifique a internet e tente de novo.');
+    throw new Error(`Sem conexão com a ${nomeProvedor}. Verifique a internet e tente de novo.`);
   }
   const duracaoMs = Date.now() - inicio;
   const dados = await res.json().catch(() => ({}));
-  const motivo = dados.error?.message ? ` (OpenRouter: ${dados.error.message})` : '';
+  const motivo = dados.error?.message ? ` (${nomeProvedor}: ${dados.error.message})` : '';
   if (!res.ok) throw new Error(mensagemDeErro(res.status) + motivo);
   if (dados.error) throw new Error(mensagemDeErro(Number(dados.error.code) || 500) + motivo);
   const kit = extrairJSON(dados.choices?.[0]?.message?.content);
-  const metricas = extrairMetricas(dados, duracaoMs, models[0]);
+  const metricas = extrairMetricas(dados, duracaoMs, usarOpenAI ? modeloResolvido : models[0]);
   return { kit, metricas };
 }
 
