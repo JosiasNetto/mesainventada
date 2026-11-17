@@ -4,14 +4,18 @@ import { materiaisExtras, combinarMateriais } from './src/materiais.js';
 import { normalizarJogadores, removerMecanicasIncompativeis, descreverFaixaJogadores } from './src/jogadores.js';
 import {
   MODELO_PADRAO,
+  MODELO_PADRAO_OPENAI,
   MODELO_IMAGEM_PADRAO,
+  MODELO_IMAGEM_PADRAO_OPENAI,
   promptKit,
   promptRevisao,
   chamarLLMComMetricas,
   gerarImagemCarta,
   chaveValida,
   AVISO_CHAVE,
-  resolverModelo,
+  ehChaveOpenRouter,
+  modeloEscolhido,
+  modeloImagemEscolhido,
 } from './src/ia.js';
 import {
   resumirCustosVersao,
@@ -264,11 +268,19 @@ function mostrarErroChave(msg) {
   $('#erro-chave').hidden = !msg;
 }
 
+// Os campos de modelo ficam vazios quando valem o padrão; o placeholder mostra qual padrão será usado com a chave.
+function mostrarPadroes(chave) {
+  const openRouter = ehChaveOpenRouter(chave);
+  $('#modelo').placeholder = openRouter ? MODELO_PADRAO : MODELO_PADRAO_OPENAI;
+  $('#modelo-imagem').placeholder = openRouter ? MODELO_IMAGEM_PADRAO : MODELO_IMAGEM_PADRAO_OPENAI;
+}
+
 function abrirConfig(erro = '') {
   const chaveSalva = ler('mi:chave', '');
   $('#chave').value = chaveSalva;
-  $('#modelo').value = resolverModelo(ler('mi:modelo', MODELO_PADRAO), chaveSalva);
-  if ($('#modelo-imagem')) $('#modelo-imagem').value = ler('mi:modelo-imagem', MODELO_IMAGEM_PADRAO);
+  $('#modelo').value = modeloEscolhido(ler('mi:modelo', ''), chaveSalva);
+  $('#modelo-imagem').value = modeloImagemEscolhido(ler('mi:modelo-imagem', ''), chaveSalva);
+  mostrarPadroes(chaveSalva);
   $('#gerar-imagens').checked = imagensAtivas();
   $('#campo-modelo-imagem').hidden = !imagensAtivas();
 
@@ -281,15 +293,17 @@ $('#chave').addEventListener('input', () => {
   const chave = $('#chave').value.trim();
   if (!chave || chaveValida(chave)) mostrarErroChave('');
   if (chaveValida(chave)) {
-    $('#modelo').value = resolverModelo($('#modelo').value, chave);
+    $('#modelo').value = modeloEscolhido($('#modelo').value, chave);
+    $('#modelo-imagem').value = modeloImagemEscolhido($('#modelo-imagem').value, chave);
+    mostrarPadroes(chave);
   }
 });
 $('#salvar-config').addEventListener('click', e => {
   const chave = $('#chave').value.trim();
   if (chave && !chaveValida(chave)) { e.preventDefault(); mostrarErroChave(AVISO_CHAVE); return; }
   gravar('mi:chave', chave);
-  gravar('mi:modelo', resolverModelo($('#modelo').value.trim(), chave));
-  if ($('#modelo-imagem')) gravar('mi:modelo-imagem', $('#modelo-imagem').value.trim() || MODELO_IMAGEM_PADRAO);
+  gravar('mi:modelo', modeloEscolhido($('#modelo').value, chave));
+  gravar('mi:modelo-imagem', modeloImagemEscolhido($('#modelo-imagem').value, chave));
   gravar('mi:imagens', $('#gerar-imagens').checked);
   render();
 });
@@ -333,7 +347,7 @@ async function gerar(mensagens, extras, botao = $('#criar')) {
     const anterior = versaoAtual();
     const { kit, metricas } = await chamarLLMComMetricas({
       chave: ler('mi:chave', ''),
-      modelo: ler('mi:modelo', MODELO_PADRAO),
+      modelo: modeloEscolhido(ler('mi:modelo', ''), ler('mi:chave', '')),
       mensagens,
       semente,
     });
@@ -352,7 +366,6 @@ async function gerar(mensagens, extras, botao = $('#criar')) {
     }
     adicionarVersao({ ...extras, semente, kit, metricas, metricasImagens: [] });
     mostrarAviso('');
-    render();
   } catch (e) {
     mostrarAviso(e.message);
   } finally {
@@ -360,6 +373,8 @@ async function gerar(mensagens, extras, botao = $('#criar')) {
     botao.disabled = false;
     botao.textContent = rotulo;
     carregando = false;
+    // Redesenha só depois de liberar "carregando": antes disso os botões de ilustrar nasceriam desabilitados.
+    render();
   }
 }
 
@@ -407,7 +422,7 @@ async function ilustrarUmaCarta(indice, botao) {
   try {
     const { imagemUrl, metricas } = await gerarImagemCarta({
       chave: ler('mi:chave', ''),
-      modeloImagem: ler('mi:modelo-imagem', MODELO_IMAGEM_PADRAO),
+      modeloImagem: modeloImagemEscolhido(ler('mi:modelo-imagem', ''), ler('mi:chave', '')),
       carta,
       kit: v.kit,
       entrada: v.entrada,
@@ -417,7 +432,6 @@ async function ilustrarUmaCarta(indice, botao) {
     v.metricasImagens.push(metricas);
     gravar('mi:projeto', projeto);
     mostrarAviso('');
-    render();
   } catch (e) {
     mostrarAviso(e.message);
   } finally {
@@ -427,6 +441,7 @@ async function ilustrarUmaCarta(indice, botao) {
       botao.textContent = rotulo;
     }
     carregando = false;
+    render();
   }
 }
 
@@ -451,7 +466,7 @@ async function ilustrarTodasAsCartas() {
       atualizarBotao(`🎨 Ilustrando ${idx + 1}/${pendentes.length}…`);
       const { imagemUrl, metricas } = await gerarImagemCarta({
         chave: ler('mi:chave', ''),
-        modeloImagem: ler('mi:modelo-imagem', MODELO_IMAGEM_PADRAO),
+        modeloImagem: modeloImagemEscolhido(ler('mi:modelo-imagem', ''), ler('mi:chave', '')),
         carta,
         kit: v.kit,
         entrada: v.entrada,

@@ -3,14 +3,19 @@ import { formatarReferenciaParaPrompt } from './referencias.js';
 import { extrairMetricas } from './custos.js';
 
 export const MODELO_PADRAO = 'nvidia/nemotron-3.5-super-vl:free';
-export const MODELO_PADRAO_OPENAI = 'gpt-4o-mini';
+export const MODELO_PADRAO_OPENAI = 'gpt-5-mini';
 // Modelos grátis saturam ou somem sem aviso; a OpenRouter tenta estes, em ordem, se o escolhido falhar.
 // ponytail: lista fixa de 3 (limite seguro da API); revisar os ":free" disponíveis antes de cada entrega.
 const RESERVAS = ['openrouter/free', 'google/gemma-4-31b-it:free'];
 export const MODELO_IMAGEM_PADRAO = 'google/gemini-3.1-flash-lite-image';
 const RESERVAS_IMAGEM = ['openai/gpt-5-image-mini', 'google/gemini-2.5-flash-image'];
+// Com chave da OpenAI, as cartas usam a API de imagens dela; "low" foi o mais barato medido (docs/avaliacao-tempo-custo.md, seção 5).
+export const MODELO_IMAGEM_PADRAO_OPENAI = 'gpt-image-1-mini';
+// A API de imagens da OpenAI não devolve custo: US$ por 1M de tokens [entrada de texto, saída de imagem].
+const PRECO_IMAGEM_OPENAI = { 'gpt-image-1-mini': [2.00, 8.00], 'gpt-image-1': [5.00, 40.00] };
 const URL_API = 'https://openrouter.ai/api/v1/chat/completions';
 const URL_API_OPENAI = 'https://api.openai.com/v1/chat/completions';
+const URL_API_IMAGENS_OPENAI = 'https://api.openai.com/v1/images/generations';
 const LIMITE_TURNO = { facil: 3, leve: 3, medio: 4, dificil: 6, avancado: 6 };
 
 export const ehChaveOpenRouter = chave => /^sk-or-v1-[A-Za-z0-9_-]{32,}$/.test(String(chave ?? ''));
@@ -34,6 +39,27 @@ export function resolverModelo(modelo, chave) {
     return MODELO_PADRAO;
   }
   return m;
+}
+
+export function resolverModeloImagem(modelo, chave) {
+  const m = String(modelo ?? '').trim();
+  if (ehChaveOpenAI(chave)) return !m || m.includes('/') ? MODELO_IMAGEM_PADRAO_OPENAI : m;
+  if (!m || (ehChaveOpenRouter(chave) && m === MODELO_IMAGEM_PADRAO_OPENAI)) return MODELO_IMAGEM_PADRAO;
+  return m;
+}
+
+// Campo vazio em ⚙ Configurar = modelo padrão do provedor. 'gpt-4o-mini' era o padrão antigo da OpenAI e ficou salvo para quem já configurou.
+const PADROES_TEXTO = [MODELO_PADRAO, MODELO_PADRAO_OPENAI, 'gpt-4o-mini'];
+const PADROES_IMAGEM = [MODELO_IMAGEM_PADRAO, MODELO_IMAGEM_PADRAO_OPENAI];
+
+export function modeloEscolhido(modelo, chave) {
+  const m = resolverModelo(modelo, chave);
+  return PADROES_TEXTO.includes(m) ? '' : m;
+}
+
+export function modeloImagemEscolhido(modelo, chave) {
+  const m = resolverModeloImagem(modelo, chave);
+  return PADROES_IMAGEM.includes(m) ? '' : m;
 }
 
 export function orientacaoJogadores(jogadores) {
@@ -295,7 +321,52 @@ export async function chamarLLM(opcoes) {
   return kit;
 }
 
+async function gerarImagemOpenAI({ chave, modelo, mensagens, carta }) {
+  const inicio = Date.now();
+  let res;
+  try {
+    res = await fetch(URL_API_IMAGENS_OPENAI, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${chave}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: modelo, prompt: mensagens[0].content, n: 1, size: '1024x1024', quality: 'low', output_format: 'jpeg',
+      }),
+      signal: AbortSignal.timeout(90_000),
+    });
+  } catch (e) {
+    if (e?.name === 'TimeoutError') throw new Error('A geração da imagem demorou mais de 90 segundos. Tente de novo.');
+    throw new Error('Sem conexão com a OpenAI. Verifique a internet e tente de novo.');
+  }
+  const duracaoMs = Date.now() - inicio;
+  const dados = await res.json().catch(() => ({}));
+  const motivo = dados.error?.message ? ` (OpenAI: ${dados.error.message})` : '';
+  if (!res.ok) throw new Error(mensagemDeErro(res.status) + motivo);
+  const b64 = dados.data?.[0]?.b64_json;
+  if (!b64) throw new Error('O modelo não gerou uma imagem válida. Tente de novo ou troque o modelo de imagem em ⚙ Configurar.');
+  const u = dados.usage ?? {};
+  const promptTokens = Number(u.input_tokens) || 0;
+  const imageTokens = Number(u.output_tokens) || 0;
+  const [precoEntrada, precoSaida] = PRECO_IMAGEM_OPENAI[modelo] ?? [0, 0];
+  return {
+    imagemUrl: `data:image/jpeg;base64,${b64}`,
+    metricas: {
+      cartaNome: String(carta?.nome ?? ''),
+      modelo,
+      duracaoMs: Math.max(0, duracaoMs),
+      promptTokens,
+      completionTokens: imageTokens,
+      imageTokens,
+      totalTokens: Number(u.total_tokens) || promptTokens + imageTokens,
+      custoUsd: (promptTokens * precoEntrada + imageTokens * precoSaida) / 1e6,
+    },
+  };
+}
+
 export async function gerarImagemCarta({ chave, modeloImagem, carta, kit, entrada }) {
+  if (ehChaveOpenAI(chave)) {
+    const modelo = resolverModeloImagem(modeloImagem, chave);
+    return gerarImagemOpenAI({ chave, modelo, mensagens: promptImagemCarta(carta, kit, entrada), carta });
+  }
   const models = [...new Set([modeloImagem || MODELO_IMAGEM_PADRAO, MODELO_IMAGEM_PADRAO, ...RESERVAS_IMAGEM])].slice(0, 3);
   const mensagens = promptImagemCarta(carta, kit, entrada);
   const inicio = Date.now();

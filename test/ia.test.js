@@ -4,6 +4,7 @@ import {
   MODELO_PADRAO,
   MODELO_PADRAO_OPENAI,
   MODELO_IMAGEM_PADRAO,
+  MODELO_IMAGEM_PADRAO_OPENAI,
   orientacaoJogadores,
   promptKit,
   promptComReferencias,
@@ -17,6 +18,9 @@ import {
   gerarImagemCarta,
   chaveValida,
   resolverModelo,
+  resolverModeloImagem,
+  modeloEscolhido,
+  modeloImagemEscolhido,
 } from '../src/ia.js';
 
 import { catalogo } from '../src/mecanicas.js';
@@ -251,4 +255,67 @@ test('gerarImagemCarta envia modalities com image e devolve imagemUrl e métrica
   assert.equal(res.metricas.imageTokens, 1120);
   assert.equal(res.metricas.custoUsd, 0.0336);
 
+});
+
+test('gerarImagemCarta com chave da OpenAI usa a API de imagens da OpenAI e calcula o custo', async () => {
+  let pedido;
+  globalThis.fetch = async (url, opts) => {
+    pedido = { url, ...opts };
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ data: [{ b64_json: 'abc123' }], usage: { input_tokens: 150, output_tokens: 272, total_tokens: 422 } }),
+    };
+  };
+  const chaveOpenAI = 'sk-proj-' + 'a1'.repeat(24);
+  const res = await gerarImagemCarta({
+    chave: chaveOpenAI,
+    modeloImagem: MODELO_IMAGEM_PADRAO,
+    carta: { nome: 'Escudo Solar', texto: 'Bloqueia 1 dano.' },
+    kit: kitExemplo,
+    entrada: entradaExemplo,
+  });
+  assert.equal(pedido.url, 'https://api.openai.com/v1/images/generations');
+  assert.equal(pedido.headers.Authorization, `Bearer ${chaveOpenAI}`);
+  const corpo = JSON.parse(pedido.body);
+  assert.equal(corpo.model, MODELO_IMAGEM_PADRAO_OPENAI);
+  assert.ok(corpo.prompt.includes('Escudo Solar'));
+  assert.equal(res.imagemUrl, 'data:image/jpeg;base64,abc123');
+  assert.equal(res.metricas.cartaNome, 'Escudo Solar');
+  assert.equal(res.metricas.imageTokens, 272);
+  assert.equal(res.metricas.totalTokens, 422);
+  assert.equal(res.metricas.custoUsd, (150 * 2 + 272 * 8) / 1e6);
+});
+
+test('gerarImagemCarta com chave da OpenAI devolve aviso legível quando a API recusa', async () => {
+  globalThis.fetch = async () => ({ ok: false, status: 401, json: async () => ({ error: { message: 'Incorrect API key' } }) });
+  await assert.rejects(
+    gerarImagemCarta({ chave: 'sk-proj-' + 'a1'.repeat(24), carta: { nome: 'X' }, kit: kitExemplo, entrada: entradaExemplo }),
+    /OpenAI: Incorrect API key/,
+  );
+});
+
+test('resolverModeloImagem troca o modelo conforme o provedor da chave', () => {
+  const chaveOpenAI = 'sk-proj-' + 'a1'.repeat(24);
+  const chaveOpenRouter = 'sk-or-v1-' + 'a1'.repeat(32);
+  assert.equal(resolverModeloImagem(MODELO_IMAGEM_PADRAO, chaveOpenAI), MODELO_IMAGEM_PADRAO_OPENAI);
+  assert.equal(resolverModeloImagem('', chaveOpenAI), MODELO_IMAGEM_PADRAO_OPENAI);
+  assert.equal(resolverModeloImagem('gpt-image-1', chaveOpenAI), 'gpt-image-1');
+  assert.equal(resolverModeloImagem(MODELO_IMAGEM_PADRAO_OPENAI, chaveOpenRouter), MODELO_IMAGEM_PADRAO);
+  assert.equal(resolverModeloImagem('google/gemini-2.5-flash-image', chaveOpenRouter), 'google/gemini-2.5-flash-image');
+});
+
+test('modeloEscolhido devolve vazio para modelos padrão e mantém os personalizados', () => {
+  const chaveOpenAI = 'sk-proj-' + 'a1'.repeat(24);
+  const chaveOpenRouter = 'sk-or-v1-' + 'a1'.repeat(32);
+  assert.equal(MODELO_PADRAO_OPENAI, 'gpt-5-mini');
+  for (const padrao of ['', MODELO_PADRAO, MODELO_PADRAO_OPENAI, 'gpt-4o-mini']) {
+    assert.equal(modeloEscolhido(padrao, chaveOpenAI), '', padrao);
+  }
+  assert.equal(modeloEscolhido('gpt-5-nano', chaveOpenAI), 'gpt-5-nano');
+  assert.equal(modeloEscolhido(MODELO_PADRAO, chaveOpenRouter), '');
+  assert.equal(modeloEscolhido('openrouter/free', chaveOpenRouter), 'openrouter/free');
+  assert.equal(modeloImagemEscolhido(MODELO_IMAGEM_PADRAO, chaveOpenAI), '');
+  assert.equal(modeloImagemEscolhido(MODELO_IMAGEM_PADRAO_OPENAI, chaveOpenRouter), '');
+  assert.equal(modeloImagemEscolhido('gpt-image-1', chaveOpenAI), 'gpt-image-1');
 });
