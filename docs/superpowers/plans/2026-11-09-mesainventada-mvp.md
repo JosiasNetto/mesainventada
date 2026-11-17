@@ -1,12 +1,14 @@
 # MesaInventada MVP (Checkpoint 1 · 10/11) Implementation Plan
 
+> **Aviso:** plano histórico, superado pela implementação atual: o app aceita **exclusivamente** chaves OpenAI (`sk-...` / `sk-proj-...`), com `gpt-5-mini` para texto e `gpt-image-1-mini` para imagens. Trechos com OpenRouter abaixo são registro do planejamento, não instruções de uso nem configuração do app hoje.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Uma página web pública onde qualquer pessoa informa tema, jogadores, duração e materiais, escolhe uma mecânica (ou duas, para combinar) e recebe da IA um kit de jogo de cartas editável (regras, cartas, rodada de teste, provocação). O kit passa por travas, fica num histórico de versões, pode ser revisado a partir do relato do teste e sai em PDF Print & Play A4.
 
-**Architecture:** Site estático (HTML + CSS + módulos JS, sem build) no GitHub Pages. O navegador chama a OpenRouter com a chave da própria pessoa (BYOK). Cada caixa do diagrama vira um arquivo: o Módulo A é `src/mecanicas.js`, a API externa é `src/ia.js`, o Módulo B é `src/validador.js` e o Módulo C é `#impressao` + `@media print`. Neste MVP o banco SQLite vira `localStorage`.
+**Architecture:** Site estático (HTML + CSS + módulos JS, sem build) no GitHub Pages. O navegador chama a OpenAI com a chave da própria pessoa (BYOK). Cada caixa do diagrama vira um arquivo: o Módulo A é `src/mecanicas.js`, a API externa é `src/ia.js`, o Módulo B é `src/validador.js` e o Módulo C é `#impressao` + `@media print`. Neste MVP o banco SQLite vira `localStorage`.
 
-**Tech Stack:** HTML/CSS/JS puros (ES modules) · OpenRouter Chat Completions via `fetch` · `localStorage` · `window.print()` · testes com `node --test` (Node ≥ 22, zero dependências npm).
+**Tech Stack:** HTML/CSS/JS puros (ES modules) · OpenAI Chat Completions via `fetch` · `localStorage` · `window.print()` · testes com `node --test` (Node ≥ 22, zero dependências npm).
 
 **Spec:** `Lancamento-Projeto-Ferramenta-CriaComp-2026-2.pdf` (exigências do professor), `MesaInventada_Relatorio_Formatado.pdf` (escopo 6.3, compromissos 6.4), `MesaInventada_Caixa_Preta_e_Transparente.pdf` (arquitetura), `MesaInventada_Prototipo_Baixa_Fidelidade.pdf` (tela única), todos na raiz do projeto.
 
@@ -24,7 +26,7 @@
 - Interface 100% em português do Brasil.
 - Zero dependências npm e zero build: a página roda em qualquer servidor estático.
 - Texto vindo do modelo entra no DOM só via `textContent`, nunca via `innerHTML`.
-- Modelo padrão `google/gemma-4-31b-it:free` (gratuito, aceita `response_format` e `seed` na OpenRouter em 09/11/2026). Os avisos de erro sugerem `openrouter/free` como alternativa.
+- Modelo padrão de texto: `gpt-5-mini` na OpenAI; imagens com `gpt-image-1-mini` (JPEG, `quality: 'low'`), usando a mesma chave. Chaves de outros provedores não são aceitas.
 - Toda mudança em relação ao diagrama ou ao protótipo fica registrada no README, porque o brief diz que "a mudança precisa ser registrada" (Task 7).
 
 ## Contratos compartilhados
@@ -53,7 +55,7 @@
 ## Review Focus
 
 1. **Modelo devolve kit malformado** (campo faltando, `cartas` como string, `quantidade: "2"`): as travas avisam e a tela mostra o que existe, sem quebrar. Coberto pelo teste `kit vazio ou malformado não quebra` (Task 2) e pelo passo de verificação com resposta malformada (Task 5).
-2. **Pessoa sem chave clica CRIAR JOGO:** abre o diálogo com o passo a passo da OpenRouter e nenhuma requisição sai. Verificado na Task 5.
+2. **Pessoa sem chave clica CRIAR JOGO:** abre o diálogo com o passo a passo da OpenAI e nenhuma requisição sai. Verificado na Task 5.
 3. **Clique duplo em CRIAR JOGO durante o carregamento:** gera uma única versão. Verificado na Task 5.
 4. **`localStorage` bloqueado** (aba anônima estrita, navegador do laboratório): a página funciona, só não lembra nada. Verificado na Task 4.
 5. **Carta com texto enorme na impressão:** a trava avisa (teste na Task 2) e o texto não vaza da carta de 63×88 mm (verificação na Task 6).
@@ -295,7 +297,7 @@ git commit -m "feat: Módulo B — travas de equilíbrio do kit"
 
 ---
 
-### Task 3: IA (`src/ia.js`): prompts, chamada à OpenRouter, avisos de falha
+### Task 3: IA (`src/ia.js`): prompts, chamada à API, avisos de falha (registro histórico com OpenRouter; ver aviso no topo)
 
 **Files:**
 - Create: `src/ia.js`
@@ -484,16 +486,16 @@ O cabeçalho mostra "MesaInventada" e o botão `#abrir-config` ("⚙ Configurar 
 > 3. Clique em CRIAR JOGO. A IA escreve regras, cartas e uma rodada de teste, e tudo fica editável.
 > 4. Jogue com papel, relate o que deu errado e peça uma revisão. Baixe o PDF para imprimir.
 >
-> **Onde a IA entra:** as mecânicas oferecidas vêm de um catálogo fixo, sem IA. A IA (um modelo de linguagem via OpenRouter) decide as regras, o texto das cartas, a rodada de teste e a provocação, e reescreve o kit a partir do seu relato. As travas, também sem IA, avisam quando o resultado foge dos limites. A última palavra é sua: dá para editar, apagar ou voltar a qualquer versão.
+> **Onde a IA entra:** as mecânicas oferecidas vêm de um catálogo fixo, sem IA. A IA (`gpt-5-mini` via OpenAI) decide as regras, o texto das cartas, a rodada de teste e a provocação, e reescreve o kit a partir do seu relato. As travas, também sem IA, avisam quando o resultado foge dos limites. A última palavra é sua: dá para editar, apagar ou voltar a qualquer versão.
 
 O `<dialog id="config">` traz esta cópia, depois `#chave` (`type=password`), `#modelo` (valor padrão `MODELO_PADRAO`) e os botões Salvar/Fechar:
 
-> Para usar a IA você precisa de uma chave gratuita da OpenRouter:
-> 1. Crie uma conta em openrouter.ai (dá para entrar com Google ou GitHub).
-> 2. Abra openrouter.ai/keys e clique em "Create API Key".
-> 3. Cole a chave abaixo. Modelos terminados em ":free" não cobram nada.
+> Para usar a IA você precisa de uma chave da OpenAI:
+> 1. Crie uma conta em platform.openai.com e configure um método de pagamento.
+> 2. Abra platform.openai.com/api-keys e clique em "Create new secret key". Copie a chave inteira na hora: ela só aparece uma vez.
+> 3. Cole a chave abaixo. O texto usa `gpt-5-mini` e as imagens usam `gpt-image-1-mini`, com a mesma chave.
 >
-> A chave fica salva só neste navegador e é enviada apenas para a OpenRouter.
+> A chave fica salva só neste navegador e é enviada apenas para a API da OpenAI (`api.openai.com`). Chaves de outros provedores não são aceitas.
 
 A paleta vem do protótipo: fundo creme `#f5efe2`, tinta `#2b2b2b`, nota amarela `#fdf1c4` (exemplo e rodada), mecânica selecionada em azul `#d6e6fb`, relatar em vermelho claro `#f8d7d7` e PDF em verde claro `#d9efd2`.
 
@@ -572,14 +574,14 @@ Um único listener `input` em `#saida` lê `data-caminho`, escreve o `textConten
 
 `#travas` lista `validarKit(kit, versaoAtual().entrada)` com o título `Travas: o que conferir antes de imprimir` e fica escondido quando a lista está vazia.
 
-- [ ] **Step 5: Verificar no navegador com a OpenRouter simulada**
+- [ ] **Step 5: Verificar no navegador com a OpenAI simulada**
 
-No Playwright, antes de clicar, rode `page.route('https://openrouter.ai/api/v1/chat/completions', r => r.fulfill({ headers: { 'access-control-allow-origin': '*' }, json: { choices: [{ message: { content: JSON.stringify(KIT) } }] } }))`, com `KIT` = `kitExemplo` de `test/kit-exemplo.js`.
+No Playwright, antes de clicar, rode `page.route('https://api.openai.com/v1/chat/completions', r => r.fulfill({ headers: { 'access-control-allow-origin': '*' }, json: { choices: [{ message: { content: JSON.stringify(KIT) } }] } }))`, com `KIT` = `kitExemplo` de `test/kit-exemplo.js`.
 
 Expected:
 - **Caminho feliz:** com uma chave falsa salva, exemplo + 1 mecânica + CRIAR JOGO mostram "Oxigênio Zero", as 6 cartas, 3 passos de rodada, a provocação e nenhuma trava. Editar o texto de uma carta e recarregar mantém a edição.
 - **Review Focus 1:** com o `KIT` = `{ "titulo": "X", "cartas": "abc" }`, a tela mostra "X" e as travas listam os campos faltando, sem erro no console.
-- **Review Focus 2:** sem chave, o clique abre `#config` e não aparece nenhum request para openrouter.ai.
+- **Review Focus 2:** sem chave, o clique abre `#config` e não aparece nenhum request para api.openai.com.
 - **Review Focus 3:** com a rota respondendo após 2 s e dois cliques seguidos em CRIAR JOGO, o resultado é uma única versão (`projeto.versoes.length === 1`).
 - Com a rota em `r.fulfill({ status: 429, headers: {'access-control-allow-origin': '*'}, body: '{}' })`, `#aviso` mostra a mensagem de limite.
 
@@ -682,7 +684,7 @@ Expected: em cerca de 1 minuto, `https://<usuario>.github.io/mesainventada/` abr
 - [ ] **Step 3: Teste real na URL publicada, com uma chave verdadeira**
 
 Faça o fluxo completo: exemplo → CRIAR JOGO → kit em menos de 60 s → editar uma carta → baixar PDF.
-Expected: kit coerente, sem travas ou com travas compreensíveis, e um PDF de 4 a 7 páginas. Se o modelo padrão falhar ou ficar lento, troque `MODELO_PADRAO` pelo modelo `:free` que funcionou e registre a troca no README.
+Expected: kit coerente, sem travas ou com travas compreensíveis, e um PDF de 4 a 7 páginas. Se o modelo padrão falhar ou ficar lento, ajuste o modelo de texto (`gpt-5-mini`) e registre a troca no README.
 
 - [ ] **Step 4: Entregar o PF 4 no Classroom**
 

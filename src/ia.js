@@ -1,39 +1,28 @@
-// Onde a IA entra: prompts, chamada à OpenRouter (chave da própria pessoa) e avisos de falha.
+// Onde a IA entra: prompts, chamadas à OpenAI (chave da própria pessoa) e avisos de falha.
 import { formatarReferenciaParaPrompt } from './referencias.js';
 import { extrairMetricas } from './custos.js';
 
-export const MODELO_PADRAO = 'nvidia/nemotron-3.5-super-vl:free';
-export const MODELO_PADRAO_OPENAI = 'gpt-4o-mini';
-// Modelos grátis saturam ou somem sem aviso; a OpenRouter tenta estes, em ordem, se o escolhido falhar.
-// ponytail: lista fixa de 3 (limite seguro da API); revisar os ":free" disponíveis antes de cada entrega.
-const RESERVAS = ['openrouter/free', 'google/gemma-4-31b-it:free'];
-export const MODELO_IMAGEM_PADRAO = 'google/gemini-3.1-flash-lite-image';
-const RESERVAS_IMAGEM = ['openai/gpt-5-image-mini', 'google/gemini-2.5-flash-image'];
-const URL_API = 'https://openrouter.ai/api/v1/chat/completions';
-const URL_API_OPENAI = 'https://api.openai.com/v1/chat/completions';
+export const MODELO_PADRAO = 'gpt-5-mini';
+export const MODELO_IMAGEM_PADRAO = 'gpt-image-1-mini';
+const URL_API = 'https://api.openai.com/v1/chat/completions';
+const URL_API_IMAGENS = 'https://api.openai.com/v1/images/generations';
+const PRECO_IMAGEM = { 'gpt-image-1-mini': [2, 8], 'gpt-image-1': [5, 40] };
 const LIMITE_TURNO = { facil: 3, leve: 3, medio: 4, dificil: 6, avancado: 6 };
 
-export const ehChaveOpenRouter = chave => /^sk-or-v1-[A-Za-z0-9_-]{32,}$/.test(String(chave ?? ''));
 export const ehChaveOpenAI = chave => /^sk-(?!or-)[A-Za-z0-9_-]{20,}$/.test(String(chave ?? ''));
 
-// Aceita chaves completas da OpenRouter ("sk-or-v1-...") e da OpenAI ("sk-...", "sk-proj-..."), recusando chaves truncadas com "...".
-export const chaveValida = chave => ehChaveOpenRouter(chave) || ehChaveOpenAI(chave);
-export const AVISO_CHAVE = 'Essa não parece uma chave completa da OpenRouter ou da OpenAI. '
-  + 'Chaves da OpenRouter começam com "sk-or-v1-" e chaves da OpenAI começam com "sk-" (como "sk-proj-..."). '
-  + 'Os sites só mostram a chave inteira uma vez, na hora de criar: se você copiou da lista de chaves, crie uma nova e copie pelo botão de copiar.';
+// Aceita apenas chaves completas da OpenAI ("sk-...", "sk-proj-..."), recusando chaves truncadas com "...".
+export const chaveValida = ehChaveOpenAI;
+export const AVISO_CHAVE = 'Essa não parece uma chave completa da OpenAI. '
+  + 'Chaves da OpenAI começam com "sk-" (como "sk-proj-..."). '
+  + 'O site só mostra a chave inteira uma vez, na hora de criar: se você copiou da lista de chaves, crie uma nova e copie pelo botão de copiar.';
 
-export function resolverModelo(modelo, chave) {
-  const m = String(modelo ?? '').trim();
-  if (ehChaveOpenAI(chave)) {
-    if (!m || m === MODELO_PADRAO || m.includes('/') || m.endsWith(':free')) {
-      return MODELO_PADRAO_OPENAI;
-    }
-    return m;
-  }
-  if (!m || (ehChaveOpenRouter(chave) && m === MODELO_PADRAO_OPENAI)) {
-    return MODELO_PADRAO;
-  }
-  return m;
+export function resolverModelo(modelo) {
+  return String(modelo ?? '').trim() || MODELO_PADRAO;
+}
+
+export function resolverModeloImagem(modeloImagem) {
+  return String(modeloImagem ?? '').trim() || MODELO_IMAGEM_PADRAO;
 }
 
 export function orientacaoJogadores(jogadores) {
@@ -218,11 +207,11 @@ export function extrairJSON(texto) {
 }
 
 export function mensagemDeErro(status) {
-  if (status === 401) return 'Chave inválida ou ausente. Abra ⚙ Configurar e cole sua chave da OpenRouter (openrouter.ai/keys).';
-  if (status === 402) return 'Sua conta OpenRouter está sem créditos para este modelo. Use um modelo terminado em ":free".';
-  if (status === 404) return 'Modelo não encontrado. Em ⚙ Configurar, use "openrouter/free" ou outro modelo ":free".';
-  if (status === 429) return 'Limite de pedidos atingido (modelos grátis têm limite por minuto e por dia). Espere um minuto e tente de novo.';
-  if (status >= 500) return 'O provedor do modelo está fora do ar agora. Tente de novo em instantes ou troque o modelo.';
+  if (status === 401) return 'Chave inválida ou ausente. Abra ⚙ Configurar e cole sua chave da OpenAI (platform.openai.com/api-keys).';
+  if (status === 402) return 'Sua conta OpenAI está sem créditos para este modelo. Adicione créditos em platform.openai.com e tente de novo.';
+  if (status === 404) return 'Modelo não encontrado ou não liberado para sua chave. Em ⚙ Configurar, use "gpt-5-mini" ou outro modelo liberado.';
+  if (status === 429) return 'Limite de pedidos atingido na OpenAI. Espere um minuto e tente de novo.';
+  if (status >= 500) return 'A OpenAI está fora do ar agora. Tente de novo em instantes ou troque o modelo.';
   return `Erro inesperado (${status}). Tente de novo.`;
 }
 
@@ -244,49 +233,47 @@ export function promptImagemCarta(carta, kit, entrada) {
 }
 
 export function extrairImagem(dados) {
-  const msg = dados?.choices?.[0]?.message;
-  const imgItem = Array.isArray(msg?.images) ? msg.images[0] : null;
-  const urlDireta = imgItem?.image_url?.url || imgItem?.url || '';
-  if (typeof urlDireta === 'string' && urlDireta.startsWith('data:image/')) return urlDireta;
-  if (typeof urlDireta === 'string' && /^https?:\/\//i.test(urlDireta)) return urlDireta;
-
-  const texto = String(msg?.content ?? '');
-  const matchData = texto.match(/data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+/);
-  if (matchData) return matchData[0];
-
+  const item = Array.isArray(dados?.data) ? dados.data[0] : null;
+  if (typeof item?.b64_json === 'string' && item.b64_json) return `data:image/jpeg;base64,${item.b64_json}`;
+  if (typeof item?.url === 'string' && /^https?:\/\//i.test(item.url)) return item.url;
   throw new Error('O modelo não gerou uma imagem válida. Tente de novo ou troque o modelo de imagem em ⚙ Configurar.');
 }
 
-export async function chamarLLMComMetricas({ chave, modelo, mensagens, semente }) {
-  const usarOpenAI = ehChaveOpenAI(chave);
-  const modeloResolvido = resolverModelo(modelo, chave);
-  const models = [...new Set([modeloResolvido, MODELO_PADRAO, ...RESERVAS])].slice(0, 3);
-  const url = usarOpenAI ? URL_API_OPENAI : URL_API;
-  const nomeProvedor = usarOpenAI ? 'OpenAI' : 'OpenRouter';
-  const corpo = usarOpenAI
-    ? { model: modeloResolvido, messages: mensagens, seed: semente, response_format: { type: 'json_object' } }
-    : { models, messages: mensagens, seed: semente, response_format: { type: 'json_object' } };
-  const inicio = Date.now();
+function metricasImagem(dados, duracaoMs, modelo) {
+  const u = dados?.usage && typeof dados.usage === 'object' ? dados.usage : {};
+  const entrada = Number(u.input_tokens) || 0;
+  const saida = Number(u.output_tokens) || 0;
+  const preco = PRECO_IMAGEM[modelo];
+  const custoUsd = preco ? (entrada * preco[0] + saida * preco[1]) / 1e6 : 0;
+  const m = extrairMetricas({
+    model: modelo,
+    usage: { prompt_tokens: entrada, completion_tokens: saida, total_tokens: Number(u.total_tokens) || entrada + saida, cost: custoUsd },
+  }, duracaoMs, modelo);
+  return { ...m, imageTokens: saida || m.imageTokens };
+}
 
+export async function chamarLLMComMetricas({ chave, modelo, mensagens, semente }) {
+  const modeloResolvido = resolverModelo(modelo);
+  const inicio = Date.now();
   let res;
   try {
-    res = await fetch(url, {
+    res = await fetch(URL_API, {
       method: 'POST',
       headers: { Authorization: `Bearer ${chave}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(corpo),
+      body: JSON.stringify({ model: modeloResolvido, messages: mensagens, seed: semente, response_format: { type: 'json_object' } }),
       signal: AbortSignal.timeout(90_000),
     });
   } catch (e) {
     if (e?.name === 'TimeoutError') throw new Error('A IA demorou mais de 90 segundos. Tente de novo ou troque o modelo em ⚙ Configurar.');
-    throw new Error(`Sem conexão com a ${nomeProvedor}. Verifique a internet e tente de novo.`);
+    throw new Error('Sem conexão com a OpenAI. Verifique a internet e tente de novo.');
   }
   const duracaoMs = Date.now() - inicio;
   const dados = await res.json().catch(() => ({}));
-  const motivo = dados.error?.message ? ` (${nomeProvedor}: ${dados.error.message})` : '';
+  const motivo = dados.error?.message ? ` (OpenAI: ${dados.error.message})` : '';
   if (!res.ok) throw new Error(mensagemDeErro(res.status) + motivo);
   if (dados.error) throw new Error(mensagemDeErro(Number(dados.error.code) || 500) + motivo);
   const kit = extrairJSON(dados.choices?.[0]?.message?.content);
-  const metricas = extrairMetricas(dados, duracaoMs, usarOpenAI ? modeloResolvido : models[0]);
+  const metricas = extrairMetricas(dados, duracaoMs, modeloResolvido);
   return { kit, metricas };
 }
 
@@ -296,30 +283,38 @@ export async function chamarLLM(opcoes) {
 }
 
 export async function gerarImagemCarta({ chave, modeloImagem, carta, kit, entrada }) {
-  const models = [...new Set([modeloImagem || MODELO_IMAGEM_PADRAO, MODELO_IMAGEM_PADRAO, ...RESERVAS_IMAGEM])].slice(0, 3);
   const mensagens = promptImagemCarta(carta, kit, entrada);
+  const modelo = resolverModeloImagem(modeloImagem);
   const inicio = Date.now();
   let res;
   try {
-    res = await fetch(URL_API, {
+    res = await fetch(URL_API_IMAGENS, {
       method: 'POST',
       headers: { Authorization: `Bearer ${chave}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ models, modalities: ['image', 'text'], messages: mensagens }),
+      body: JSON.stringify({
+        model: modelo,
+        prompt: mensagens[0].content,
+        size: '1024x1024',
+        n: 1,
+        quality: 'low',
+        output_format: 'jpeg',
+      }),
       signal: AbortSignal.timeout(90_000),
     });
   } catch (e) {
     if (e?.name === 'TimeoutError') throw new Error('A geração da imagem demorou mais de 90 segundos. Tente de novo.');
-    throw new Error('Sem conexão com a OpenRouter. Verifique a internet e tente de novo.');
+    throw new Error('Sem conexão com a OpenAI. Verifique a internet e tente de novo.');
   }
   const duracaoMs = Date.now() - inicio;
   const dados = await res.json().catch(() => ({}));
-  const motivo = dados.error?.message ? ` (OpenRouter: ${dados.error.message})` : '';
+  const motivo = dados.error?.message ? ` (OpenAI: ${dados.error.message})` : '';
   if (!res.ok) throw new Error(mensagemDeErro(res.status) + motivo);
   if (dados.error) throw new Error(mensagemDeErro(Number(dados.error.code) || 500) + motivo);
-  const imagemUrl = extrairImagem(dados);
-  const metricas = {
-    cartaNome: String(carta?.nome ?? ''),
-    ...extrairMetricas(dados, duracaoMs, models[0]),
+  return {
+    imagemUrl: extrairImagem(dados),
+    metricas: {
+      cartaNome: String(carta?.nome ?? ''),
+      ...metricasImagem(dados, duracaoMs, modelo),
+    },
   };
-  return { imagemUrl, metricas };
 }

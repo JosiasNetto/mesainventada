@@ -2,7 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   MODELO_PADRAO,
-  MODELO_PADRAO_OPENAI,
   MODELO_IMAGEM_PADRAO,
   orientacaoJogadores,
   promptKit,
@@ -17,12 +16,14 @@ import {
   gerarImagemCarta,
   chaveValida,
   resolverModelo,
+  resolverModeloImagem,
 } from '../src/ia.js';
 
 import { catalogo } from '../src/mecanicas.js';
 import { obterReferencia, referenciaDeTexto } from '../src/referencias.js';
 import { kitExemplo, entradaExemplo } from './kit-exemplo.js';
 
+const CHAVE = 'sk-proj-' + 'a1'.repeat(24);
 const texto = msgs => msgs.map(m => m.content).join('\n');
 const resposta = (corpo, ok = true, status = 200) => async () => ({ ok, status, json: async () => corpo });
 
@@ -35,10 +36,10 @@ test('extrairJSON falha com aviso em resposta cortada', () => {
   assert.throws(() => extrairJSON('{"a": [1, 2'), /formato inesperado/);
 });
 
-test('mensagemDeErro diz o que fazer', () => {
-  assert.match(mensagemDeErro(401), /openrouter\.ai\/keys/);
-  assert.match(mensagemDeErro(402), /:free/);
-  assert.match(mensagemDeErro(404), /openrouter\/free/);
+test('mensagemDeErro aponta a configuração da OpenAI', () => {
+  assert.match(mensagemDeErro(401), /platform\.openai\.com\/api-keys/);
+  assert.match(mensagemDeErro(402), /créditos/i);
+  assert.match(mensagemDeErro(404), /gpt-5-mini/);
   assert.match(mensagemDeErro(429), /espere/i);
   assert.match(mensagemDeErro(503), /tente de novo/i);
 });
@@ -55,41 +56,36 @@ test('promptRevisao leva o kit atual, o relato e as travas', () => {
   for (const s of ['Oxigênio Zero', 'ficou fácil demais', 'aviso X', '"mudancas"']) assert.ok(t.includes(s), s);
 });
 
-test('chamarLLM envia chave, modelo e semente e devolve o kit', async () => {
+test('chamarLLM envia chave, modelo e semente para a OpenAI e devolve o kit', async () => {
   let pedido;
   globalThis.fetch = async (url, opts) => { pedido = { url, ...opts };
     return { ok: true, status: 200, json: async () => ({ choices: [{ message: { content: JSON.stringify(kitExemplo) } }] }) }; };
-  const kit = await chamarLLM({ chave: 'sk-or-x', modelo: MODELO_PADRAO, mensagens: [], semente: 42 });
+  const kit = await chamarLLM({ chave: CHAVE, modelo: MODELO_PADRAO, mensagens: [], semente: 42 });
   assert.equal(kit.titulo, 'Oxigênio Zero');
-  assert.equal(pedido.url, 'https://openrouter.ai/api/v1/chat/completions');
-  assert.equal(pedido.headers.Authorization, 'Bearer sk-or-x');
+  assert.equal(pedido.url, 'https://api.openai.com/v1/chat/completions');
+  assert.equal(pedido.headers.Authorization, `Bearer ${CHAVE}`);
   const corpo = JSON.parse(pedido.body);
-  assert.equal(corpo.models[0], MODELO_PADRAO);
+  assert.equal(corpo.model, MODELO_PADRAO);
+  assert.equal(corpo.models, undefined);
   assert.equal(corpo.seed, 42);
   assert.deepEqual(corpo.response_format, { type: 'json_object' });
 });
 
-test('chamarLLM manda modelos grátis de reserva para quando o escolhido estiver saturado', async () => {
-  let corpo;
-  globalThis.fetch = async (url, opts) => { corpo = JSON.parse(opts.body);
-    return { ok: true, status: 200, json: async () => ({ choices: [{ message: { content: JSON.stringify(kitExemplo) } }] }) }; };
-  await chamarLLM({ chave: 'x', modelo: 'google/gemma-4-31b-it:free', mensagens: [], semente: 1 });
-  assert.equal(corpo.models[0], 'google/gemma-4-31b-it:free');
-  assert.ok(corpo.models.includes('openrouter/free'));
-  assert.ok(corpo.models.length <= 3);
-  assert.equal(new Set(corpo.models).size, corpo.models.length);
-  assert.ok(corpo.models.every(m => m.endsWith(':free') || m === 'openrouter/free'));
+test('resolverModelo usa gpt-5-mini quando vazio e preserva o modelo informado', () => {
+  assert.equal(resolverModelo(''), MODELO_PADRAO);
+  assert.equal(resolverModelo('gpt-5-nano'), 'gpt-5-nano');
+  assert.equal(MODELO_PADRAO, 'gpt-5-mini');
 });
 
-test('aviso de erro traz o motivo dado pela OpenRouter', async () => {
-  globalThis.fetch = resposta({ error: { message: 'Model is temporarily rate-limited upstream' } }, false, 429);
-  await assert.rejects(chamarLLM({ chave: 'x', modelo: 'm', mensagens: [], semente: 1 }), /Espere.*rate-limited upstream/s);
+test('aviso de erro traz o motivo dado pela OpenAI', async () => {
+  globalThis.fetch = resposta({ error: { message: 'Rate limit reached' } }, false, 429);
+  await assert.rejects(chamarLLM({ chave: CHAVE, modelo: MODELO_PADRAO, mensagens: [], semente: 1 }), /Espere.*Rate limit reached/s);
 });
 
 test('chamarLLM transforma falhas em avisos legíveis', async () => {
-  const args = { chave: 'x', modelo: 'm', mensagens: [], semente: 1 };
+  const args = { chave: CHAVE, modelo: MODELO_PADRAO, mensagens: [], semente: 1 };
   globalThis.fetch = resposta({}, false, 401);
-  await assert.rejects(chamarLLM(args), /openrouter\.ai\/keys/);
+  await assert.rejects(chamarLLM(args), /platform\.openai\.com\/api-keys/);
   globalThis.fetch = resposta({ error: { message: 'Provider returned error', code: 502 } });
   await assert.rejects(chamarLLM(args), /tente de novo/i);
   globalThis.fetch = async () => { throw new TypeError('fetch failed'); };
@@ -98,33 +94,13 @@ test('chamarLLM transforma falhas em avisos legíveis', async () => {
   await assert.rejects(chamarLLM(args), /90 segundos/);
 });
 
-test('chaveValida aceita chaves completas da OpenRouter e da OpenAI e recusa chaves truncadas', () => {
-  assert.ok(chaveValida('sk-or-v1-' + 'a1'.repeat(32)));
+test('chaveValida aceita só chaves completas da OpenAI', () => {
   assert.ok(chaveValida('sk-proj-' + 'a1'.repeat(32)));
   assert.ok(chaveValida('sk-proj-abc_123-XYZ' + 'a1'.repeat(16)));
   assert.ok(chaveValida('sk-' + 'a1'.repeat(24)));
-  for (const ruim of ['', 'sk-or-v1-a1b...9f2', 'sk-or-v1-a1b…9f2', 'sk-proj-a1b...9f2', 'sk-or-v1-abc', 'sk-abc',
-                      '"sk-or-v1-' + 'a1'.repeat(32) + '"', 'sk-or-v1-' + 'a1'.repeat(16) + ' ' + 'a1'.repeat(16), 'minha chave'])
+  for (const ruim of ['', 'sk-or-v1-' + 'a1'.repeat(32), 'sk-or-v1-a1b...9f2', 'sk-proj-a1b...9f2', 'sk-abc',
+                      '"sk-proj-' + 'a1'.repeat(32) + '"', 'sk-proj-' + 'a1'.repeat(16) + ' ' + 'a1'.repeat(16), 'minha chave'])
     assert.equal(chaveValida(ruim), false, ruim);
-});
-
-test('chamarLLM com chave da OpenAI usa endpoint e formato da OpenAI', async () => {
-  let pedido;
-  globalThis.fetch = async (url, opts) => {
-    pedido = { url, ...opts };
-    return { ok: true, status: 200, json: async () => ({ choices: [{ message: { content: JSON.stringify(kitExemplo) } }] }) };
-  };
-  const chaveOpenAI = 'sk-proj-' + 'a1'.repeat(24);
-  const kit = await chamarLLM({ chave: chaveOpenAI, modelo: MODELO_PADRAO, mensagens: [], semente: 7 });
-  assert.equal(kit.titulo, 'Oxigênio Zero');
-  assert.equal(pedido.url, 'https://api.openai.com/v1/chat/completions');
-  assert.equal(pedido.headers.Authorization, `Bearer ${chaveOpenAI}`);
-  const corpo = JSON.parse(pedido.body);
-  assert.equal(corpo.model, MODELO_PADRAO_OPENAI);
-  assert.equal(corpo.models, undefined);
-  assert.equal(corpo.seed, 7);
-  assert.deepEqual(corpo.response_format, { type: 'json_object' });
-  assert.equal(resolverModelo('gpt-4o', chaveOpenAI), 'gpt-4o');
 });
 
 test('promptKit aceita até cinco mecânicas e pede para combinar todas', () => {
@@ -189,13 +165,11 @@ test('promptImagemCarta descreve a carta, o tema do jogo e proíbe texto na imag
   assert.match(t, /sem texto|não escreva/i);
 });
 
-test('extrairImagem aceita formato images da OpenRouter e falha com aviso legível se ausente', () => {
+test('extrairImagem aceita b64_json e URL da OpenAI e falha com aviso legível se ausente', () => {
   const url = 'data:image/jpeg;base64,/9j/4AAQSkZJRg==';
-  assert.equal(
-    extrairImagem({ choices: [{ message: { images: [{ type: 'image_url', image_url: { url } }] } }] }),
-    url,
-  );
-  assert.throws(() => extrairImagem({ choices: [{ message: { content: 'sem imagem' } }] }), /não gerou uma imagem/i);
+  assert.equal(extrairImagem({ data: [{ b64_json: '/9j/4AAQSkZJRg==' }] }), url);
+  assert.equal(extrairImagem({ data: [{ url: 'https://exemplo.com/img.png' }] }), 'https://exemplo.com/img.png');
+  assert.throws(() => extrairImagem({ data: [] }), /não gerou uma imagem/i);
 });
 
 test('chamarLLMComMetricas devolve kit e métricas de tempo, tokens e custo', async () => {
@@ -208,7 +182,7 @@ test('chamarLLMComMetricas devolve kit e métricas de tempo, tokens e custo', as
       choices: [{ message: { content: JSON.stringify(kitExemplo) } }],
     }),
   });
-  const res = await chamarLLMComMetricas({ chave: 'sk-or-x', modelo: MODELO_PADRAO, mensagens: [], semente: 7 });
+  const res = await chamarLLMComMetricas({ chave: CHAVE, modelo: MODELO_PADRAO, mensagens: [], semente: 7 });
   assert.equal(res.kit.titulo, 'Oxigênio Zero');
   assert.equal(res.metricas.promptTokens, 420);
   assert.equal(res.metricas.completionTokens, 680);
@@ -217,38 +191,40 @@ test('chamarLLMComMetricas devolve kit e métricas de tempo, tokens e custo', as
   assert.ok(res.metricas.duracaoMs >= 0);
 });
 
-test('gerarImagemCarta envia modalities com image e devolve imagemUrl e métricas', async () => {
+test('resolverModeloImagem usa gpt-image-1-mini quando vazio', () => {
+  assert.equal(resolverModeloImagem(''), MODELO_IMAGEM_PADRAO);
+  assert.equal(resolverModeloImagem('gpt-image-1'), 'gpt-image-1');
+  assert.equal(MODELO_IMAGEM_PADRAO, 'gpt-image-1-mini');
+});
+
+test('gerarImagemCarta usa /images/generations da OpenAI com a mesma chave', async () => {
+  let url;
   let corpo;
-  const imgFake = 'data:image/jpeg;base64,abc123';
-  globalThis.fetch = async (url, opts) => {
+  globalThis.fetch = async (destino, opts) => {
+    url = destino;
     corpo = JSON.parse(opts.body);
     return {
       ok: true,
       status: 200,
       json: async () => ({
-        model: MODELO_IMAGEM_PADRAO,
-        usage: {
-          prompt_tokens: 34,
-          completion_tokens: 1120,
-          total_tokens: 1154,
-          cost: 0.0336,
-          completion_tokens_details: { image_tokens: 1120 },
-        },
-        choices: [{ message: { images: [{ type: 'image_url', image_url: { url: imgFake } }] } }],
+        data: [{ b64_json: 'abc123' }],
+        usage: { input_tokens: 152, output_tokens: 272, total_tokens: 424 },
       }),
     };
   };
   const res = await gerarImagemCarta({
-    chave: 'sk-or-x',
+    chave: CHAVE,
     modeloImagem: MODELO_IMAGEM_PADRAO,
     carta: { nome: 'Escudo Solar', texto: 'Bloqueia 1 dano.' },
     kit: kitExemplo,
     entrada: entradaExemplo,
   });
-  assert.deepEqual(corpo.modalities, ['image', 'text']);
-  assert.equal(corpo.models[0], MODELO_IMAGEM_PADRAO);
-  assert.equal(res.imagemUrl, imgFake);
-  assert.equal(res.metricas.imageTokens, 1120);
-  assert.equal(res.metricas.custoUsd, 0.0336);
-
+  assert.equal(url, 'https://api.openai.com/v1/images/generations');
+  assert.equal(corpo.model, MODELO_IMAGEM_PADRAO);
+  assert.equal(corpo.output_format, 'jpeg');
+  assert.match(corpo.prompt, /Escudo Solar/);
+  assert.equal(res.imagemUrl, 'data:image/jpeg;base64,abc123');
+  assert.equal(res.metricas.promptTokens, 152);
+  assert.equal(res.metricas.imageTokens, 272);
+  assert.ok(res.metricas.custoUsd > 0);
 });

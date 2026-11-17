@@ -12,6 +12,7 @@ import {
   chaveValida,
   AVISO_CHAVE,
   resolverModelo,
+  resolverModeloImagem,
 } from './src/ia.js';
 import {
   resumirCustosVersao,
@@ -267,8 +268,8 @@ function mostrarErroChave(msg) {
 function abrirConfig(erro = '') {
   const chaveSalva = ler('mi:chave', '');
   $('#chave').value = chaveSalva;
-  $('#modelo').value = resolverModelo(ler('mi:modelo', MODELO_PADRAO), chaveSalva);
-  if ($('#modelo-imagem')) $('#modelo-imagem').value = ler('mi:modelo-imagem', MODELO_IMAGEM_PADRAO);
+  $('#modelo').value = resolverModelo(ler('mi:modelo', MODELO_PADRAO));
+  if ($('#modelo-imagem')) $('#modelo-imagem').value = resolverModeloImagem(ler('mi:modelo-imagem', MODELO_IMAGEM_PADRAO));
   $('#gerar-imagens').checked = imagensAtivas();
   $('#campo-modelo-imagem').hidden = !imagensAtivas();
 
@@ -281,15 +282,16 @@ $('#chave').addEventListener('input', () => {
   const chave = $('#chave').value.trim();
   if (!chave || chaveValida(chave)) mostrarErroChave('');
   if (chaveValida(chave)) {
-    $('#modelo').value = resolverModelo($('#modelo').value, chave);
+    $('#modelo').value = resolverModelo($('#modelo').value);
+    if ($('#modelo-imagem')) $('#modelo-imagem').value = resolverModeloImagem($('#modelo-imagem').value);
   }
 });
 $('#salvar-config').addEventListener('click', e => {
   const chave = $('#chave').value.trim();
   if (chave && !chaveValida(chave)) { e.preventDefault(); mostrarErroChave(AVISO_CHAVE); return; }
   gravar('mi:chave', chave);
-  gravar('mi:modelo', resolverModelo($('#modelo').value.trim(), chave));
-  if ($('#modelo-imagem')) gravar('mi:modelo-imagem', $('#modelo-imagem').value.trim() || MODELO_IMAGEM_PADRAO);
+  gravar('mi:modelo', resolverModelo($('#modelo').value.trim()));
+  if ($('#modelo-imagem')) gravar('mi:modelo-imagem', resolverModeloImagem($('#modelo-imagem').value.trim()));
   gravar('mi:imagens', $('#gerar-imagens').checked);
   render();
 });

@@ -30,7 +30,7 @@
         <li>Clique em CRIAR JOGO. A IA escreve regras, cartas e uma rodada de teste, e tudo fica editável.</li>
         <li>Com a geração de imagens ativa, ilustre as cartas individualmente ou clique em "Ilustrar todas as cartas"; confira o tempo e o custo da geração e baixe o PDF para imprimir.</li>
       </ol>
-      <p><strong>Onde a IA entra:</strong> o catálogo de mecânicas é fixo, sem IA, e você escolhe nele as que quer usar. A IA, por um modelo da OpenRouter ou da OpenAI conforme a chave que você configurar, decide as regras, o texto das cartas, a rodada de teste e a provocação, além de reescrever o kit a partir do seu relato. Se você ativar a geração de imagens em ⚙ Configurar IA, ela também ilustra as cartas sob demanda. A ferramenta mede o tempo, os tokens e o custo de cada artefato gerado. As travas, sem IA, avisam quando o resultado foge dos limites. A última palavra é sua: dá para editar, apagar ou voltar a qualquer versão.</p>
+      <p><strong>Onde a IA entra:</strong> o catálogo de mecânicas é fixo, sem IA, e você escolhe nele as que quer usar. A IA, por um modelo da OpenAI, decide as regras, o texto das cartas, a rodada de teste e a provocação, além de reescrever o kit a partir do seu relato. Se você ativar a geração de imagens em ⚙ Configurar IA, ela também ilustra as cartas sob demanda. A ferramenta mede o tempo, os tokens e o custo de cada artefato gerado. As travas, sem IA, avisam quando o resultado foge dos limites. A última palavra é sua: dá para editar, apagar ou voltar a qualquer versão.</p>
     </details>
 
     <main class="colunas">
@@ -151,14 +151,13 @@
   <dialog id="config">
     <form method="dialog">
       <h2>Configurar IA</h2>
-      <p>Para usar a IA você pode colar uma chave da <strong>OpenRouter</strong> (gratuita) ou da <strong>OpenAI API</strong>:</p>
+      <p>Para usar a IA você precisa de uma chave da <strong>OpenAI API</strong>:</p>
       <ol>
-        <li><strong>OpenRouter:</strong> crie uma conta em <a href="https://openrouter.ai" target="_blank" rel="noopener">openrouter.ai</a>, abra <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a> e clique em "Create API Key".</li>
-        <li><strong>OpenAI:</strong> abra <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a> e clique em "Create new secret key".</li>
+        <li>Abra <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a> e clique em "Create new secret key".</li>
         <li>Copie a chave inteira na hora (ela só aparece uma vez) e cole abaixo.</li>
       </ol>
-      <label class="campo">Chave da API (OpenRouter ou OpenAI)
-        <input id="chave" type="password" autocomplete="off" placeholder="sk-or-... ou sk-proj-...">
+      <label class="campo">Chave da API (OpenAI)
+        <input id="chave" type="password" autocomplete="off" placeholder="sk-proj-...">
       </label>
       <label class="campo">Modelo de texto
         <input id="modelo" type="text" autocomplete="off">
@@ -171,7 +170,7 @@
       <label class="campo" id="campo-modelo-imagem">Modelo de imagem (cartas)
         <input id="modelo-imagem" type="text" autocomplete="off">
       </label>
-      <p class="dica">A chave fica salva só neste navegador e é enviada apenas para o provedor correspondente (OpenRouter ou OpenAI).</p>
+      <p class="dica">A chave fica salva só neste navegador e é enviada apenas para a OpenAI. Texto e imagens usam a mesma chave.</p>
 
       <p id="erro-chave" class="erro-chave" role="alert" hidden></p>
       <div class="linha">

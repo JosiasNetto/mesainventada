@@ -10,13 +10,13 @@ import {
   formatarBrl,
 } from '../src/custos.js';
 
-test('extrairMetricas normaliza usage da OpenRouter para texto e imagem', () => {
+test('extrairMetricas normaliza usage para texto e imagem', () => {
   const mTexto = extrairMetricas({
-    model: 'nvidia/nemotron-3.5-super-vl:free',
+    model: 'gpt-5-mini',
     usage: { prompt_tokens: 480, completion_tokens: 720, total_tokens: 1200, cost: 0 },
-  }, 6200, 'openrouter/free');
+  }, 6200, 'gpt-5-mini');
 
-  assert.equal(mTexto.modelo, 'nvidia/nemotron-3.5-super-vl:free');
+  assert.equal(mTexto.modelo, 'gpt-5-mini');
   assert.equal(mTexto.duracaoMs, 6200);
   assert.equal(mTexto.promptTokens, 480);
   assert.equal(mTexto.completionTokens, 720);
@@ -25,7 +25,7 @@ test('extrairMetricas normaliza usage da OpenRouter para texto e imagem', () => 
   assert.equal(mTexto.custoUsd, 0);
 
   const mImg = extrairMetricas({
-    model: 'google/gemini-3.1-flash-lite-image',
+    model: 'gpt-image-1-mini',
     usage: {
       prompt_tokens: 32,
       completion_tokens: 1120,
@@ -35,7 +35,7 @@ test('extrairMetricas normaliza usage da OpenRouter para texto e imagem', () => 
     },
   }, 4966);
 
-  assert.equal(mImg.modelo, 'google/gemini-3.1-flash-lite-image');
+  assert.equal(mImg.modelo, 'gpt-image-1-mini');
   assert.equal(mImg.duracaoMs, 4966);
   assert.equal(mImg.imageTokens, 1120);
   assert.equal(mImg.custoUsd, 0.033608);
@@ -52,7 +52,7 @@ test('extrairMetricas lida com resposta sem usage sem quebrar', () => {
 test('resumirCustosVersao soma metricas do kit de texto e das imagens geradas', () => {
   const versao = {
     metricas: {
-      modelo: 'nvidia/nemotron-3.5-super-vl:free',
+      modelo: 'gpt-5-mini',
       duracaoMs: 6000,
       promptTokens: 500,
       completionTokens: 800,
@@ -101,7 +101,7 @@ test('resumirCustosVersao soma metricas do kit de texto e das imagens geradas', 
 test('formatarResumoMetricas gera texto legivel para interface e historico', () => {
   const resumo = resumirCustosVersao({
     metricas: {
-      modelo: 'nvidia/nemotron-3.5-super-vl:free',
+      modelo: 'gpt-5-mini',
       duracaoMs: 7400,
       promptTokens: 500,
       completionTokens: 700,
@@ -111,7 +111,7 @@ test('formatarResumoMetricas gera texto legivel para interface e historico', () 
     },
     metricasImagens: [
       {
-        modelo: 'google/gemini-3.1-flash-lite-image',
+        modelo: 'gpt-image-1-mini',
         duracaoMs: 5100,
         promptTokens: 35,
         completionTokens: 1120,

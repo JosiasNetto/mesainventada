@@ -3,8 +3,10 @@
 **Projeto:** MesaInventada - Criatividade Computacional 2026.2  
 **Responsavel:** Lucas  
 **Branch:** `feat/imagens-e-avaliacao-custo`  
-**Provedores de IA Avaliados:** OpenRouter API (`https://openrouter.ai/api/v1/chat/completions`) e OpenAI API (`https://api.openai.com/v1`, ver secao 5)   
+**Provedores Avaliados no Comparativo Historico:** OpenRouter API (`https://openrouter.ai/api/v1/chat/completions`) e OpenAI API (`https://api.openai.com/v1`, ver secao 5)   
 **Cotacao de Referencia:** `US$ 1,00 = R$ 5,80`
+
+> **Estado atual do app:** a MesaInventada usa **apenas a OpenAI** (`gpt-5-mini` para texto e `gpt-image-1-mini` para imagens, com a mesma chave `sk-...` / `sk-proj-...`). As secoes 1 a 4 e todas as tabelas com modelos da OpenRouter sao **comparativo historico de avaliacao**, nao uma opcao configuravel no app. A secao 5 registra a configuracao atual e suas medicoes.
 
 ---
 
@@ -14,10 +16,10 @@ Este documento apresenta a avaliacao empirica e analitica do **tempo de geracao*
 
 A avaliacao foi implementada em duas frentes complementares:
 1. **Telemetria em tempo real na interface (`src/custos.js` + `src/ia.js` + `app.js`):**
-   - Toda chamada a OpenRouter (texto ou imagem) cronometra a latencia ponta a ponta (`duracaoMs`) e extrai o objeto `usage` retornado pela API (`prompt_tokens`, `completion_tokens`, `completion_tokens_details.image_tokens`, `total_tokens` e `cost` em US$).
+   - No app atual, toda chamada a OpenAI (texto ou imagem) cronometra a latencia ponta a ponta (`duracaoMs`) e extrai o objeto `usage` retornado pela API (`prompt_tokens`, `completion_tokens`, `completion_tokens_details.image_tokens`, `total_tokens`); nas medicoes historicas com a OpenRouter (secoes 1 a 4), o `usage` tambem trazia `cost` em US$.
    - O painel **Avaliacao de tempo e custo deste artefato** na tela do jogo e os selos no **Historico de Versoes** mostram o tempo e o custo real de cada versao gerada.
-2. **Medicoes empiricas na API da OpenRouter:**
-   - Foram executadas chamadas reais com a chave do projeto para medir latencia, consumo de tokens, tamanho do payload de imagem e custo cobrado por operacao.
+2. **Medicoes empiricas historicas na API da OpenRouter (nao configuraveis hoje):**
+   - Foram executadas chamadas reais nas chaves usadas durante a avaliacao para medir latencia, consumo de tokens, tamanho do payload de imagem e custo cobrado por operacao (dados historicos; nao refletem a configuracao atual do app).
 
 ---
 
@@ -40,7 +42,7 @@ Na geracao de texto (`chamarLLMComMetricas`), a ferramenta envia o sistema de co
 
 ### 2.2. Etapa Visual: Geracao de Imagens para as Cartas (Task 10)
 
-A OpenRouter disponibiliza geracao de imagens via `chat/completions` com `modalities: ["image", "text"]`. Avaliamos os modelos de imagem compativeis na plataforma e realizamos medicoes empiricas reais:
+Na avaliacao historica, a OpenRouter disponibilizava geracao de imagens via `chat/completions` com `modalities: ["image", "text"]`. Foram avaliados os modelos de imagem compativeis na plataforma e realizadas medicoes empiricas reais:
 
 | Modelo de Imagem (OpenRouter) | Prompt Tokens | Image / Completion Tokens | Payload Base64 Bruto | Payload Compactado (`canvas`) | Tempo por Carta | Custo Real por Carta (US$) | Custo por Carta (R$) |
 |---|---:|---:|---:|---:|---:|---:|---:|
@@ -85,9 +87,9 @@ Um jogo gerado na **MesaInventada** possui entre **4 e 12 tipos de carta** (medi
 
 ---
 
-## 5. Medicoes Empiricas na Plataforma da OpenAI
+## 5. Medicoes Empiricas na Plataforma da OpenAI (configuracao atual)
 
-Como o `src/ia.js` tambem aceita chaves da OpenAI (`sk-...` / `sk-proj-...`), medimos tempo e custo dos modelos de texto e de imagem disponiveis diretamente na plataforma da OpenAI.
+O `src/ia.js` aceita **exclusivamente** chaves da OpenAI (`sk-...` / `sk-proj-...`): essa e a configuracao atual do app. Medimos tempo e custo dos modelos de texto e de imagem disponiveis diretamente na plataforma da OpenAI.
 
 ### 5.1. Metodologia
 
@@ -146,6 +148,6 @@ Estimativa com geracao sequencial (1 kit de texto + N ilustracoes, como no botao
 3. **`gpt-5` ultrapassa o timeout do app.** As duas execucoes (95,5 s e 111,5 s) passaram dos **90 s** de `AbortSignal.timeout(90_000)` em `chamarLLMComMetricas`; no app, o usuario receberia "A IA demorou mais de 90 segundos". O `gpt-5` nao e viavel com o timeout atual.
 4. **`gpt-image-1-mini` em `low` e a ilustracao mais barata medida no projeto:** US$ 0,0025 por carta, **13x mais barata** que o `google/gemini-3.1-flash-lite-image` da OpenRouter (US$ 0,0336, secao 2.2), porem ~2x mais lenta (10,1 s contra 4,97 s). Em `medium` o custo sobe 3,5x (US$ 0,0088) para +3,5 s por carta.
 5. **Pontos de atencao para usar a OpenAI no app:**
-   - O modelo padrao para chaves OpenAI (`MODELO_PADRAO_OPENAI = 'gpt-4o-mini'`) **nao estava habilitado** na chave testada; com essa chave, o usuario precisaria configurar `gpt-5-mini` em ⚙ Configurar.
-   - `gerarImagemCarta` hoje chama apenas a OpenRouter (`modalities: ['image','text']`); para usar `gpt-image-1-mini` com chave OpenAI seria preciso chamar `/v1/images/generations`, como no script de benchmark.
+   - O app usa `gpt-5-mini` como modelo padrao de texto, habilitado na chave testada e com o melhor equilibrio (secao 5.2); na medicao, `gpt-4o-mini` nao estava habilitado (secao 5.1). Nao e preciso configurar o modelo manualmente.
+   - `gerarImagemCarta` usa exclusivamente a API da OpenAI: `/v1/images/generations` com `gpt-image-1-mini` (`quality: 'low'`, `output_format: 'jpeg'`), com a mesma chave OpenAI salva no navegador, como no script de benchmark. Texto e imagens usam, assim, a mesma chave e o mesmo provedor.
    - Para reduzir o tempo do texto, vale testar `reasoning_effort: 'minimal'` ou `'low'` nos modelos GPT-5 (nao medido aqui), ja que o raciocinio domina a latencia e o custo.
