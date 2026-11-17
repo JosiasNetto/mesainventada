@@ -256,6 +256,9 @@ $('#jogadores').addEventListener('blur', sincronizarJogadores);
 document.querySelectorAll('input[name=material]').forEach(i => i.addEventListener('change', atualizarEntradaMecanicas));
 $('#outro-material').addEventListener('change', atualizarEntradaMecanicas);
 
+// Geração de imagens é opcional: desligada, some o modelo de imagem e os botões de ilustrar.
+const imagensAtivas = () => ler('mi:imagens', true) !== false;
+
 function mostrarErroChave(msg) {
   $('#erro-chave').textContent = msg;
   $('#erro-chave').hidden = !msg;
@@ -266,11 +269,14 @@ function abrirConfig(erro = '') {
   $('#chave').value = chaveSalva;
   $('#modelo').value = resolverModelo(ler('mi:modelo', MODELO_PADRAO), chaveSalva);
   if ($('#modelo-imagem')) $('#modelo-imagem').value = ler('mi:modelo-imagem', MODELO_IMAGEM_PADRAO);
+  $('#gerar-imagens').checked = imagensAtivas();
+  $('#campo-modelo-imagem').hidden = !imagensAtivas();
 
   mostrarErroChave(erro);
   $('#config').showModal();
 }
 $('#abrir-config').addEventListener('click', () => abrirConfig());
+$('#gerar-imagens').addEventListener('change', e => { $('#campo-modelo-imagem').hidden = !e.target.checked; });
 $('#chave').addEventListener('input', () => {
   const chave = $('#chave').value.trim();
   if (!chave || chaveValida(chave)) mostrarErroChave('');
@@ -284,7 +290,8 @@ $('#salvar-config').addEventListener('click', e => {
   gravar('mi:chave', chave);
   gravar('mi:modelo', resolverModelo($('#modelo').value.trim(), chave));
   if ($('#modelo-imagem')) gravar('mi:modelo-imagem', $('#modelo-imagem').value.trim() || MODELO_IMAGEM_PADRAO);
-
+  gravar('mi:imagens', $('#gerar-imagens').checked);
+  render();
 });
 
 // Sem chave: abre a configuração. Chave salva fora do formato (ex.: copiada da lista do site): abre com a explicação.
@@ -574,14 +581,16 @@ function renderKit(kit, alvo, editavel) {
     }
     d.append(c('p', cc.texto, `cartas.${i}.texto`, 'carta-texto'));
     const rodape = el('div', null, 'carta-rodape');
-    if (editavel) {
+    if (editavel && (imagensAtivas() || temArte)) {
       const acoesArte = el('div', null, 'carta-acoes-arte');
-      const btnArte = el('button', temArte ? '↻ arte' : '🎨 ilustrar', 'botao-arte-carta');
-      btnArte.type = 'button';
-      btnArte.dataset.ilustrar = i;
-      btnArte.disabled = carregando;
-      btnArte.title = temArte ? 'Gerar outra ilustração para esta carta' : 'Gerar ilustração com IA para esta carta';
-      acoesArte.append(btnArte);
+      if (imagensAtivas()) {
+        const btnArte = el('button', temArte ? '↻ arte' : '🎨 ilustrar', 'botao-arte-carta');
+        btnArte.type = 'button';
+        btnArte.dataset.ilustrar = i;
+        btnArte.disabled = carregando;
+        btnArte.title = temArte ? 'Gerar outra ilustração para esta carta' : 'Gerar ilustração com IA para esta carta';
+        acoesArte.append(btnArte);
+      }
       if (temArte) {
         const btnSemArte = el('button', '✕', 'botao-remover-arte');
         btnSemArte.type = 'button';
@@ -615,7 +624,7 @@ function renderKit(kit, alvo, editavel) {
   }
 
   const secaoCartas = el('div', null, 'parte');
-  if (editavel && listaCartas.length) {
+  if (editavel && listaCartas.length && imagensAtivas()) {
     const ilustradas = listaCartas.filter(cc => cc && typeof cc === 'object' && cc.imagem).length;
     const topoCartas = el('div', null, 'topo-cartas');
     topoCartas.append(el('h4', `Cartas (${ilustradas}/${listaCartas.length} ilustradas)`));

@@ -28,9 +28,9 @@
         <li>Abra o catálogo completo, veja todas as mecânicas e escolha de uma a cinco para combinar.</li>
         <li>Marque os materiais que você tem e escreva outros no campo "outros materiais".</li>
         <li>Clique em CRIAR JOGO. A IA escreve regras, cartas e uma rodada de teste, e tudo fica editável.</li>
-        <li>Ilustre as cartas individualmente ou clique em "Ilustrar todas as cartas", confira o tempo e o custo da geração e baixe o PDF para imprimir.</li>
+        <li>Com a geração de imagens ativa, ilustre as cartas individualmente ou clique em "Ilustrar todas as cartas"; confira o tempo e o custo da geração e baixe o PDF para imprimir.</li>
       </ol>
-      <p><strong>Onde a IA entra:</strong> o catálogo de mecânicas é fixo, sem IA, e você escolhe nele as que quer usar. A IA ( via OpenRouter) decide as regras, o texto das cartas, a rodada de teste, a provocação e as ilustrações das cartas sob demanda, além de reescrever o kit a partir do seu relato. A ferramenta mede o tempo, os tokens e o custo de cada artefato gerado. As travas, sem IA, avisam quando o resultado foge dos limites. A última palavra é sua: dá para editar, apagar ou voltar a qualquer versão.</p>
+      <p><strong>Onde a IA entra:</strong> o catálogo de mecânicas é fixo, sem IA, e você escolhe nele as que quer usar. A IA, por um modelo da OpenRouter ou da OpenAI conforme a chave que você configurar, decide as regras, o texto das cartas, a rodada de teste e a provocação, além de reescrever o kit a partir do seu relato. Se você ativar a geração de imagens em ⚙ Configurar IA, ela também ilustra as cartas sob demanda. A ferramenta mede o tempo, os tokens e o custo de cada artefato gerado. As travas, sem IA, avisam quando o resultado foge dos limites. A última palavra é sua: dá para editar, apagar ou voltar a qualquer versão.</p>
     </details>
 
     <main class="colunas">
@@ -163,7 +163,12 @@
       <label class="campo">Modelo de texto
         <input id="modelo" type="text" autocomplete="off">
       </label>
-      <label class="campo">Modelo de imagem (cartas)
+      <label class="interruptor">
+        <input id="gerar-imagens" type="checkbox" role="switch" checked>
+        <span class="interruptor-trilho" aria-hidden="true"></span>
+        Gerar ilustrações das cartas com IA
+      </label>
+      <label class="campo" id="campo-modelo-imagem">Modelo de imagem (cartas)
         <input id="modelo-imagem" type="text" autocomplete="off">
       </label>
       <p class="dica">A chave fica salva só neste navegador e é enviada apenas para o provedor correspondente (OpenRouter ou OpenAI).</p>
