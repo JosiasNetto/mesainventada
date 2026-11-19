@@ -11,6 +11,8 @@ import {
   promptRevisao,
   chamarLLMComMetricas,
   gerarImagemCarta,
+  avaliarKit,
+  NOTA_BOA_RUBRICA,
   chaveValida,
   AVISO_CHAVE,
   ehChaveOpenRouter,
@@ -366,6 +368,7 @@ async function gerar(mensagens, extras, botao = $('#criar')) {
     }
     adicionarVersao({ ...extras, semente, kit, metricas, metricasImagens: [] });
     mostrarAviso('');
+    avaliarVersao(versaoAtual());
   } catch (e) {
     mostrarAviso(e.message);
   } finally {
@@ -703,6 +706,69 @@ $('#revisar').addEventListener('click', () => {
   revisar(relato, $('#revisar'));
 });
 
+// ---- rubrica de qualidade (avaliador com modelo barato) ---------------------------
+
+const avaliacoesEmAndamento = new Set();
+
+async function avaliarVersao(v) {
+  const chave = ler('mi:chave', '');
+  if (!v || avaliacoesEmAndamento.has(v) || !chaveValida(chave)) return;
+  avaliacoesEmAndamento.add(v);
+  renderRubrica();
+  try {
+    const { avaliacao, metricas } = await avaliarKit({ chave, kit: v.kit, entrada: v.entrada, mecanicas: v.mecanicas });
+    v.avaliacao = { ...avaliacao, metricas, avaliadaEm: new Date().toISOString() };
+  } catch (e) {
+    v.avaliacao = { erro: e.message };
+  } finally {
+    avaliacoesEmAndamento.delete(v);
+    gravar('mi:projeto', projeto);
+    if (v === versaoAtual()) { renderRubrica(); renderMetricas(); }
+    renderHistorico();
+  }
+}
+
+function renderRubrica() {
+  const caixa = $('#rubrica');
+  const v = versaoAtual();
+  if (!v) { caixa.hidden = true; return; }
+  const a = v.avaliacao;
+  const avaliando = avaliacoesEmAndamento.has(v);
+  const botao = el('button', a ? '↻ reavaliar' : 'Avaliar com a rubrica', 'botao-secundario');
+  botao.type = 'button';
+  botao.disabled = avaliando;
+  botao.addEventListener('click', () => { if (chaveOuConfig()) avaliarVersao(v); });
+  const titulo = el('div', null, 'topo-rubrica');
+  titulo.append(el('h4', `📋 Rubrica de qualidade (v${v.n})`));
+  const filhos = [titulo];
+
+  if (avaliando) {
+    filhos.push(el('p', 'Avaliando o kit com a rubrica…', 'rubrica-estado'));
+  } else if (a?.erro) {
+    filhos.push(el('p', `A avaliação falhou: ${a.erro}`, 'rubrica-estado rubrica-erro'));
+  } else if (Array.isArray(a?.criterios)) {
+    titulo.append(el('span', `${a.total}/${a.maximo} · ${a.bom ? 'bom' : `abaixo de ${NOTA_BOA_RUBRICA}`}`, a.bom ? 'rubrica-total nota-boa' : 'rubrica-total'));
+    const lista = el('ul', null, 'rubrica-criterios');
+    a.criterios.forEach(c => {
+      const li = el('li', null, `rubrica-criterio nota-${c.nota}`);
+      li.append(el('strong', c.nome), el('span', `${c.nota}/2`, 'rubrica-nota'), el('span', c.justificativa, 'rubrica-justificativa'));
+      lista.append(li);
+    });
+    filhos.push(lista);
+    if (a.desatualizada) filhos.push(el('p', 'O kit foi editado depois desta avaliação: clique em ↻ reavaliar para atualizar as notas.', 'rubrica-estado rubrica-aviso'));
+  } else {
+    filhos.push(el('p', 'Esta versão ainda não foi avaliada.', 'rubrica-estado'));
+  }
+
+  const rodape = el('div', null, 'rubrica-rodape');
+  const legenda = el('p', `Cada critério vale de 0 a 2, e um kit bom soma ${NOTA_BOA_RUBRICA} ou mais em 10. As travas automáticas conferem os limites estruturais antes da rubrica.`, 'metricas-orcamento');
+  if (a?.metricas) legenda.textContent += ` Avaliado por ${a.metricas.modelo} em ${formatarSegundos(a.metricas.duracaoMs)} · ${formatarUsd(a.metricas.custoUsd)}.`;
+  rodape.append(legenda, botao);
+  filhos.push(rodape);
+  caixa.replaceChildren(...filhos);
+  caixa.hidden = false;
+}
+
 function renderMetricas() {
   const caixa = $('#metricas');
   if (!caixa) return;
@@ -738,6 +804,11 @@ function renderMetricas() {
         ? `${r.imagens.totalTokens} tokens (${r.imagens.imageTokens} de imagem)${r.imagens.modelos.length ? ` · ${r.imagens.modelos.join(', ')}` : ''}`
         : 'Nenhuma carta ilustrada ainda nesta versão.',
     ),
+    ...(r.avaliacao.duracaoMs > 0 ? [criarBloco(
+      'Avaliação da rubrica',
+      `${formatarSegundos(r.avaliacao.duracaoMs)} · ${formatarUsd(r.avaliacao.custoUsd)}`,
+      `${r.avaliacao.totalTokens} tokens · ${r.avaliacao.modelo}`,
+    )] : []),
     criarBloco(
       'Total do artefato',
       `${formatarSegundos(r.total.duracaoMs)} · ${formatarUsd(r.total.custoUsd)}`,
@@ -772,6 +843,9 @@ function renderHistorico() {
     const resumo = resumirCustosVersao(v);
     if (resumo.total.duracaoMs > 0 || resumo.total.totalTokens > 0 || resumo.imagens.quantidade > 0) {
       li.append(el('span', formatarResumoMetricas(resumo).curto, 'metricas-versao'));
+    }
+    if (Number.isFinite(v.avaliacao?.total)) {
+      li.append(el('span', `rubrica ${v.avaliacao.total}/${v.avaliacao.maximo}`, v.avaliacao.bom ? 'nota-versao nota-boa' : 'nota-versao'));
     }
     if (i === projeto.atual) li.append(el('span', 'aberta', 'marca-atual'));
     else {
@@ -883,6 +957,7 @@ function render() {
     renderKit(v.kit, $('#kit'), true);
     renderImpressao(v.kit);
   }
+  renderRubrica();
   renderMetricas();
   renderTravas();
   renderHistorico();
@@ -903,6 +978,7 @@ $('#kit').addEventListener('input', e => {
   const caminho = e.target.dataset?.caminho;
   if (!v || !caminho) return;
   definir(v.kit, caminho, e.target.textContent);
+  if (v.avaliacao && !v.avaliacao.desatualizada) { v.avaliacao.desatualizada = true; renderRubrica(); }
   gravar('mi:projeto', projeto);
   renderTravas();
   renderImpressao(v.kit);
@@ -915,6 +991,7 @@ $('#kit').addEventListener('click', e => {
   if (!Array.isArray(v.kit.cartas)) v.kit.cartas = [];
   if (b.dataset.ilustrar != null) { ilustrarUmaCarta(Number(b.dataset.ilustrar), b); return; }
   if (b.dataset.acao === 'ilustrar-todas') { ilustrarTodasAsCartas(b); return; }
+  if (b.dataset.removerArte == null && v.avaliacao) v.avaliacao.desatualizada = true;
   if (b.dataset.removerArte != null) {
     const carta = v.kit.cartas[Number(b.dataset.removerArte)];
     if (carta && typeof carta === 'object') delete carta.imagem;

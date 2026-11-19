@@ -21,6 +21,12 @@ import {
   resolverModeloImagem,
   modeloEscolhido,
   modeloImagemEscolhido,
+  kitSemImagens,
+  promptAvaliacao,
+  normalizarAvaliacao,
+  avaliarKit,
+  CRITERIOS_RUBRICA,
+  MODELO_AVALIADOR_OPENAI,
 } from '../src/ia.js';
 
 import { catalogo } from '../src/mecanicas.js';
@@ -318,4 +324,67 @@ test('modeloEscolhido devolve vazio para modelos padrão e mantém os personaliz
   assert.equal(modeloImagemEscolhido(MODELO_IMAGEM_PADRAO, chaveOpenAI), '');
   assert.equal(modeloImagemEscolhido(MODELO_IMAGEM_PADRAO_OPENAI, chaveOpenRouter), '');
   assert.equal(modeloImagemEscolhido('gpt-image-1', chaveOpenAI), 'gpt-image-1');
+});
+
+const kitIlustrado = () => ({
+  ...kitExemplo,
+  cartas: kitExemplo.cartas.map(c => ({ ...c, imagem: 'data:image/jpeg;base64,' + 'A'.repeat(50_000) })),
+});
+
+test('promptRevisao não envia as ilustrações em base64 e não altera o kit original', () => {
+  const kit = kitIlustrado();
+  const t = texto(promptRevisao(entradaExemplo, kit, 'acabou rápido', []));
+  assert.ok(!t.includes('base64'));
+  assert.ok(t.includes(kitExemplo.cartas[0].nome));
+  assert.ok(t.length < 10_000, `prompt com ${t.length} caracteres`);
+  assert.ok(kit.cartas.every(c => c.imagem), 'o kit da tela continua com as imagens');
+  assert.deepEqual(kitSemImagens({ titulo: 'Sem cartas' }), { titulo: 'Sem cartas' });
+});
+
+test('promptAvaliacao traz os 5 critérios, o pedido do formulário e o kit sem imagens', () => {
+  const t = texto(promptAvaliacao(entradaExemplo, catalogo.slice(0, 2), kitIlustrado()));
+  for (const c of CRITERIOS_RUBRICA) assert.ok(t.includes(`"${c.id}"`) && t.includes(c.nome), c.id);
+  assert.ok(t.includes(entradaExemplo.tema));
+  assert.ok(t.includes(catalogo[0].nome));
+  assert.ok(!t.includes('base64'));
+});
+
+test('normalizarAvaliacao limita notas a 0..2, completa critérios ausentes e soma o total', () => {
+  const a = normalizarAvaliacao({ criterios: [
+    { id: 'jogavel', nota: 2, justificativa: 'ok' },
+    { id: 'fiel', nota: 5, justificativa: 'exagero' },
+    { id: 'rodada', nota: -1 },
+    { id: 'clareza', nota: '1' },
+  ] });
+  assert.deepEqual(a.criterios.map(c => c.nota), [2, 2, 0, 1, 0]);
+  assert.equal(a.total, 5);
+  assert.equal(a.maximo, 10);
+  assert.equal(a.bom, false);
+  assert.match(a.criterios[4].justificativa, /não justificou/);
+  assert.equal(normalizarAvaliacao({ criterios: CRITERIOS_RUBRICA.map(c => ({ id: c.id, nota: c.id === 'fiel' ? 0 : 2 })) }).bom, true);
+  assert.throws(() => normalizarAvaliacao({}), /formato inesperado/);
+});
+
+test('avaliarKit com chave da OpenAI usa o gpt-5-nano com raciocínio mínimo e calcula o custo', async () => {
+  let pedido;
+  globalThis.fetch = async (url, opts) => {
+    pedido = { url, corpo: JSON.parse(opts.body) };
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        model: 'gpt-5-nano-2025-08-07',
+        usage: { prompt_tokens: 1000, completion_tokens: 200, total_tokens: 1200 },
+        choices: [{ message: { content: JSON.stringify({ criterios: CRITERIOS_RUBRICA.map(c => ({ id: c.id, nota: 2, justificativa: 'cumpre' })) }) } }],
+      }),
+    };
+  };
+  const { avaliacao, metricas } = await avaliarKit({ chave: 'sk-proj-' + 'a1'.repeat(24), kit: kitIlustrado(), entrada: entradaExemplo, mecanicas: [] });
+  assert.equal(pedido.url, 'https://api.openai.com/v1/chat/completions');
+  assert.equal(pedido.corpo.model, MODELO_AVALIADOR_OPENAI);
+  assert.equal(pedido.corpo.reasoning_effort, 'minimal');
+  assert.ok(!JSON.stringify(pedido.corpo).includes('base64'));
+  assert.equal(avaliacao.total, 10);
+  assert.equal(avaliacao.bom, true);
+  assert.equal(metricas.custoUsd, (1000 * 0.05 + 200 * 0.40) / 1e6);
 });

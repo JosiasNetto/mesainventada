@@ -241,6 +241,36 @@ button.nota-amarela:hover { border-color: var(--tinta); }
 .metricas-orcamento { margin: 8px 0 0; font-size: 0.86rem; color: var(--tinta-suave); }
 .metricas-versao { font-size: 0.85rem; color: var(--tinta-suave); background: rgba(47, 90, 168, 0.08); padding: 2px 8px; border-radius: 3px; }
 
+.painel-rubrica {
+  margin-top: 18px; border: 2px solid var(--tinta); border-radius: 6px;
+  background: var(--branco); padding: 12px 14px;
+}
+.topo-rubrica { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.topo-rubrica h4 { margin: 0; font-size: 0.98rem; color: var(--caneta-azul); }
+.rubrica-total, .nota-versao { font-weight: 700; border: 2px solid var(--tinta); border-radius: 4px; padding: 2px 10px; background: var(--amarelo); }
+.nota-versao { font-size: 0.85rem; font-weight: 400; border-width: 1px; padding: 1px 8px; }
+.rubrica-total.nota-boa, .nota-versao.nota-boa { background: var(--verde); }
+.rubrica-criterios { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.rubrica-criterio {
+  display: grid; grid-template-columns: minmax(120px, 11em) 3em 1fr; gap: 4px 10px; align-items: baseline;
+  background: var(--papel); border: 1.5px solid rgba(43, 43, 43, 0.3); border-left-width: 5px; border-radius: 4px; padding: 6px 10px;
+}
+.rubrica-criterio.nota-2 { border-left-color: #4f8a3c; }
+.rubrica-criterio.nota-1 { border-left-color: #c9a227; }
+.rubrica-criterio.nota-0 { border-left-color: #b44; }
+.rubrica-criterio strong { font-size: 0.9rem; }
+.rubrica-nota { font-weight: 700; }
+.rubrica-justificativa { font-size: 0.86rem; color: var(--tinta-suave); line-height: 1.35; }
+.rubrica-estado { margin: 4px 0; color: var(--tinta-suave); }
+.rubrica-erro { color: #8a2a2a; }
+.rubrica-aviso { background: var(--amarelo); padding: 6px 10px; border-radius: 4px; color: var(--tinta); font-size: 0.9rem; }
+.rubrica-rodape { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-top: 8px; }
+.rubrica-rodape .metricas-orcamento { margin: 0; flex: 1 1 260px; }
+@media (max-width: 560px) {
+  .rubrica-criterio { grid-template-columns: 1fr auto; }
+  .rubrica-justificativa { grid-column: 1 / -1; }
+}
+
 .acoes { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; align-items: center; }
 
 /* ---- revisão, histórico e comparação ---- */

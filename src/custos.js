@@ -59,9 +59,18 @@ export function resumirCustosVersao(versao, cotacaoBrl = COTACAO_BRL_PADRAO) {
     modelos: [],
   });
 
-  const duracaoTotalMs = texto.duracaoMs + imagens.duracaoMs;
-  const tokensTotais = texto.totalTokens + imagens.totalTokens;
-  const custoTotalUsd = texto.custoUsd + imagens.custoUsd;
+  // O avaliador da rubrica também é uma chamada paga: entra no total do artefato.
+  const mAval = v.avaliacao?.metricas && typeof v.avaliacao.metricas === 'object' ? v.avaliacao.metricas : {};
+  const avaliacao = {
+    modelo: String(mAval.modelo || ''),
+    duracaoMs: Number(mAval.duracaoMs) || 0,
+    totalTokens: Number(mAval.totalTokens) || 0,
+    custoUsd: Number(mAval.custoUsd) || 0,
+  };
+
+  const duracaoTotalMs = texto.duracaoMs + imagens.duracaoMs + avaliacao.duracaoMs;
+  const tokensTotais = texto.totalTokens + imagens.totalTokens + avaliacao.totalTokens;
+  const custoTotalUsd = texto.custoUsd + imagens.custoUsd + avaliacao.custoUsd;
   const taxaBrl = Number(cotacaoBrl) > 0 ? Number(cotacaoBrl) : COTACAO_BRL_PADRAO;
   const custoTotalBrl = custoTotalUsd * taxaBrl;
 
@@ -72,6 +81,7 @@ export function resumirCustosVersao(versao, cotacaoBrl = COTACAO_BRL_PADRAO) {
   return {
     texto,
     imagens,
+    avaliacao,
     total: {
       duracaoMs: duracaoTotalMs,
       totalTokens: tokensTotais,

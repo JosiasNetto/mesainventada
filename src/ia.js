@@ -13,6 +13,11 @@ const RESERVAS_IMAGEM = ['openai/gpt-5-image-mini', 'google/gemini-2.5-flash-ima
 export const MODELO_IMAGEM_PADRAO_OPENAI = 'gpt-image-1-mini';
 // A API de imagens da OpenAI não devolve custo: US$ por 1M de tokens [entrada de texto, saída de imagem].
 const PRECO_IMAGEM_OPENAI = { 'gpt-image-1-mini': [2.00, 8.00], 'gpt-image-1': [5.00, 40.00] };
+// A API de texto da OpenAI também não devolve custo: US$ por 1M de tokens [entrada, saída] (tabela oficial, Standard tier).
+const PRECO_TEXTO_OPENAI = { 'gpt-5-nano': [0.05, 0.40], 'gpt-5-mini': [0.25, 2.00], 'gpt-5': [1.25, 10.00] };
+// Avaliador da rubrica: o modelo de texto mais barato da OpenAI, com raciocínio mínimo para responder em poucos segundos.
+export const MODELO_AVALIADOR_OPENAI = 'gpt-5-nano';
+const MODELO_AVALIADOR_OPENROUTER = 'openai/gpt-5-nano';
 const URL_API = 'https://openrouter.ai/api/v1/chat/completions';
 const URL_API_OPENAI = 'https://api.openai.com/v1/chat/completions';
 const URL_API_IMAGENS_OPENAI = 'https://api.openai.com/v1/images/generations';
@@ -162,9 +167,22 @@ export function promptKit(entrada, mecanicas = []) {
   return [{ role: 'system', content: sistema(entrada) }, { role: 'user', content: user }];
 }
 
+// As ilustrações ficam em base64 dentro das cartas: mandar isso para a IA estoura o limite de tokens.
+export function kitSemImagens(kit) {
+  if (!kit || typeof kit !== 'object' || !Array.isArray(kit.cartas)) return kit;
+  return {
+    ...kit,
+    cartas: kit.cartas.map(c => {
+      if (!c || typeof c !== 'object') return c;
+      const { imagem, ...resto } = c;
+      return resto;
+    }),
+  };
+}
+
 export function promptRevisao(entrada, kit, relato, avisos) {
   const user = [
-    `Kit atual: ${JSON.stringify(kit)}`,
+    `Kit atual: ${JSON.stringify(kitSemImagens(kit))}`,
     `O que aconteceu no teste: ${relato}`,
     `Problemas apontados pelas travas: ${avisos.join('; ') || 'nenhum'}`,
     'Revise o kit para resolver isso, mudando o mínimo necessário. Devolva o kit completo no mesmo formato e acrescente "mudancas": ["o que mudou e por quê"].',
@@ -283,20 +301,14 @@ export function extrairImagem(dados) {
   throw new Error('O modelo não gerou uma imagem válida. Tente de novo ou troque o modelo de imagem em ⚙ Configurar.');
 }
 
-export async function chamarLLMComMetricas({ chave, modelo, mensagens, semente }) {
+// Envia um pedido de texto (chat/completions) e devolve o JSON da resposta com as métricas de tempo, tokens e custo.
+async function enviarTexto({ chave, corpo, modeloMetricas }) {
   const usarOpenAI = ehChaveOpenAI(chave);
-  const modeloResolvido = resolverModelo(modelo, chave);
-  const models = [...new Set([modeloResolvido, MODELO_PADRAO, ...RESERVAS])].slice(0, 3);
-  const url = usarOpenAI ? URL_API_OPENAI : URL_API;
   const nomeProvedor = usarOpenAI ? 'OpenAI' : 'OpenRouter';
-  const corpo = usarOpenAI
-    ? { model: modeloResolvido, messages: mensagens, seed: semente, response_format: { type: 'json_object' } }
-    : { models, messages: mensagens, seed: semente, response_format: { type: 'json_object' } };
   const inicio = Date.now();
-
   let res;
   try {
-    res = await fetch(url, {
+    res = await fetch(usarOpenAI ? URL_API_OPENAI : URL_API, {
       method: 'POST',
       headers: { Authorization: `Bearer ${chave}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(corpo),
@@ -311,9 +323,80 @@ export async function chamarLLMComMetricas({ chave, modelo, mensagens, semente }
   const motivo = dados.error?.message ? ` (${nomeProvedor}: ${dados.error.message})` : '';
   if (!res.ok) throw new Error(mensagemDeErro(res.status) + motivo);
   if (dados.error) throw new Error(mensagemDeErro(Number(dados.error.code) || 500) + motivo);
-  const kit = extrairJSON(dados.choices?.[0]?.message?.content);
-  const metricas = extrairMetricas(dados, duracaoMs, usarOpenAI ? modeloResolvido : models[0]);
+  const json = extrairJSON(dados.choices?.[0]?.message?.content);
+  const metricas = extrairMetricas(dados, duracaoMs, modeloMetricas);
+  const preco = usarOpenAI && PRECO_TEXTO_OPENAI[metricas.modelo.replace(/-\d{4}-\d{2}-\d{2}$/, '')];
+  if (preco && !metricas.custoUsd) {
+    metricas.custoUsd = (metricas.promptTokens * preco[0] + metricas.completionTokens * preco[1]) / 1e6;
+  }
+  return { json, metricas };
+}
+
+export async function chamarLLMComMetricas({ chave, modelo, mensagens, semente }) {
+  const usarOpenAI = ehChaveOpenAI(chave);
+  const modeloResolvido = resolverModelo(modelo, chave);
+  const models = [...new Set([modeloResolvido, MODELO_PADRAO, ...RESERVAS])].slice(0, 3);
+  const corpo = usarOpenAI
+    ? { model: modeloResolvido, messages: mensagens, seed: semente, response_format: { type: 'json_object' } }
+    : { models, messages: mensagens, seed: semente, response_format: { type: 'json_object' } };
+  const { json: kit, metricas } = await enviarTexto({ chave, corpo, modeloMetricas: usarOpenAI ? modeloResolvido : models[0] });
   return { kit, metricas };
+}
+
+// Rubrica de qualidade do artefato: 5 critérios de 0 a 2; um kit bom soma 8 ou mais em 10.
+export const CRITERIOS_RUBRICA = [
+  { id: 'jogavel', nome: 'Jogável', avalia: 'Dá para jogar do início ao fim só lendo as regras, sem a mesa inventar nada', verificacao: 'Ler preparação, turno e fim em sequência e procurar lacunas' },
+  { id: 'fiel', nome: 'Fiel ao pedido', avalia: 'Tema, mecânicas, número de jogadores e materiais escolhidos aparecem no jogo', verificacao: 'Comparar o kit com o que foi preenchido no formulário' },
+  { id: 'rodada', nome: 'Rodada coerente', avalia: 'A rodada de teste simulada respeita as regras do próprio kit', verificacao: 'Refazer a rodada passo a passo com as regras ao lado' },
+  { id: 'clareza', nome: 'Clareza das cartas', avalia: 'Textos curtos, sem ambiguidade, em português e com efeito entendível', verificacao: 'Ler cada carta isolada e checar se o efeito é único' },
+  { id: 'provocacao', nome: 'Provocação útil', avalia: 'A pergunta da IA questiona uma suposição real deste jogo', verificacao: 'Ver se a pergunta leva a uma mudança possível nas regras' },
+];
+export const NOTA_MAXIMA_RUBRICA = CRITERIOS_RUBRICA.length * 2;
+export const NOTA_BOA_RUBRICA = 8;
+
+export function promptAvaliacao(entrada, mecanicas, kit) {
+  const e = entrada && typeof entrada === 'object' ? entrada : {};
+  const { mudancas, ...kitAvaliado } = kitSemImagens(kit) ?? {};
+  const sistemaAvaliador = `Você é o avaliador de qualidade da ferramenta MesaInventada. Você NÃO reescreve o jogo: só dá notas.
+Avalie o kit com esta rubrica. Cada critério vale 0, 1 ou 2 (0 = não cumpre, 1 = cumpre em parte, 2 = cumpre).
+${CRITERIOS_RUBRICA.map(c => `- "${c.id}" (${c.nome}): ${c.avalia}. Como verificar: ${c.verificacao}.`).join('\n')}
+Seja rigoroso: dê 2 só quando não houver problema concreto. Ao tirar ponto, a justificativa diz o problema exato.
+Responda SOMENTE com um objeto JSON, sem nada fora dele, neste formato:
+{"criterios":[${CRITERIOS_RUBRICA.map(c => `{"id":"${c.id}","nota":0,"justificativa":""}`).join(',')}]}
+"justificativa": português do Brasil, uma frase com até 140 caracteres.`;
+  const lista = Array.isArray(mecanicas) ? mecanicas : [];
+  const user = [
+    'Pedido feito no formulário:',
+    `- Tema: ${e.tema ?? ''}`,
+    `- Formato: ${e.formato === 'tabuleiro' ? 'tabuleiro (A4) e cartas' : 'cartas'}`,
+    `- Jogadores: ${e.jogadores ?? ''} · Duração: ${e.duracao ?? ''} minutos · Dificuldade: ${e.dificuldade ?? ''}`,
+    `- Materiais disponíveis: ${(e.materiais ?? []).join(', ')}`,
+    `- Mecânicas escolhidas: ${lista.length ? lista.map(m => m.nome).join('; ') : 'livre (a IA escolheu)'}`,
+    '',
+    `Kit gerado: ${JSON.stringify(kitAvaliado)}`,
+  ].join('\n');
+  return [{ role: 'system', content: sistemaAvaliador }, { role: 'user', content: user }];
+}
+
+export function normalizarAvaliacao(resposta) {
+  const recebidos = Array.isArray(resposta?.criterios) ? resposta.criterios : [];
+  if (!recebidos.length) throw new Error('O avaliador respondeu em um formato inesperado. Clique em ↻ reavaliar.');
+  const criterios = CRITERIOS_RUBRICA.map(c => {
+    const r = recebidos.find(x => x?.id === c.id) ?? {};
+    const nota = Math.min(2, Math.max(0, Math.round(Number(r.nota) || 0)));
+    return { id: c.id, nome: c.nome, nota, justificativa: String(r.justificativa ?? '').trim() || 'O avaliador não justificou esta nota.' };
+  });
+  const total = criterios.reduce((s, c) => s + c.nota, 0);
+  return { criterios, total, maximo: NOTA_MAXIMA_RUBRICA, bom: total >= NOTA_BOA_RUBRICA };
+}
+
+export async function avaliarKit({ chave, kit, entrada, mecanicas }) {
+  const messages = promptAvaliacao(entrada, mecanicas, kit);
+  const corpo = ehChaveOpenAI(chave)
+    ? { model: MODELO_AVALIADOR_OPENAI, messages, response_format: { type: 'json_object' }, reasoning_effort: 'minimal' }
+    : { model: MODELO_AVALIADOR_OPENROUTER, messages, response_format: { type: 'json_object' }, reasoning: { effort: 'minimal' } };
+  const { json, metricas } = await enviarTexto({ chave, corpo, modeloMetricas: corpo.model });
+  return { avaliacao: normalizarAvaliacao(json), metricas };
 }
 
 export async function chamarLLM(opcoes) {

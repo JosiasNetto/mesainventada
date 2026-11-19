@@ -131,3 +131,14 @@ test('formatarResumoMetricas gera texto legivel para interface e historico', () 
   assert.match(formatarUsd(0), /grátis|US\$ 0,0000/i);
   assert.match(formatarBrl(0.19488), /R\$/);
 });
+
+test('resumirCustosVersao inclui o avaliador da rubrica no total do artefato', () => {
+  const r = resumirCustosVersao({
+    metricas: { duracaoMs: 1000, totalTokens: 100, custoUsd: 0.01 },
+    avaliacao: { total: 8, metricas: { modelo: 'gpt-5-nano', duracaoMs: 2000, totalTokens: 1000, custoUsd: 0.0002 } },
+  });
+  assert.equal(r.avaliacao.modelo, 'gpt-5-nano');
+  assert.equal(r.total.duracaoMs, 3000);
+  assert.equal(r.total.totalTokens, 1100);
+  assert.ok(Math.abs(r.total.custoUsd - 0.0102) < 1e-12);
+});
