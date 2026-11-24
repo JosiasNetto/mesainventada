@@ -1,0 +1,36 @@
+id,nome_curto,modo_criacao,formato,dificuldade,jogadores,duracao_min,materiais,outros_materiais,mecanicas_ids,mecanicas_nomes,tema
+1,Os Últimos Pergaminhos,guiado,cartas,medio,4,30,papel;caneta,,gestao-recursos;contra-relogio,Gestão de recursos escassos;Contra o relógio,"Contexto: Alexandria, 48 a.C. Um incêndio avança pelos corredores da grande biblioteca, e o fogo chega a uma nova ala a cada rodada.
+Papel dos jogadores: bibliotecários que trabalham juntos para salvar o maior número possível de pergaminhos antes que o prédio desabe.
+Objetivo: levar pergaminhos de diferentes saberes (astronomia, medicina, poesia, mapas) até os barcos do porto; o grupo vence se salvar pelo menos um de cada saber.
+Tensão: baldes de água, tochas e braços disponíveis são poucos e compartilhados; apagar o fogo numa ala significa deixar outra queimar.
+Clima: urgente e emocional, com escolhas difíceis sobre o que a humanidade vai perder.
+Na mesa: quero conversas do tipo ""salvamos a medicina ou os mapas?"", sem um jogador mandando em todos."
+2,Conselho das Marés,guiado,tabuleiro,dificil,5,45,papel;caneta;dado,moedas;tampinhas,controle-setores;negociacao,Controle de setores;Negociação e troca,"Contexto: depois de uma enchente histórica, uma cidade ribeirinha precisa ser reconstruída bairro por bairro, e a verba pública não dá para todos.
+Papel dos jogadores: líderes comunitários de bairros diferentes (o porto, a feira, a vila dos pescadores, o morro e o centro antigo), cada um com prioridades próprias.
+Objetivo: ter mais influência nos setores do tabuleiro (escola, posto de saúde, mercado, ponte, praça) ao fim de 6 rodadas, somando pontos de bem-estar do próprio bairro.
+Tensão: cada bairro produz um recurso diferente (tijolos, mão de obra, peixe, madeira, votos) e ninguém consegue construir sozinho; acordos podem ser quebrados, e a maré sobe no dado ao fim de cada rodada, alagando os setores mais baixos.
+Clima: político e negociado, com alianças que mudam a cada rodada, mas sem crueldade.
+Na mesa: muita troca e promessa em voz alta; as moedas são a verba municipal e as tampinhas marcam a presença de cada bairro nos setores."
+3,Quem Comeu a Pamonha?,guiado,cartas,facil,6,15,papel,,blefe,Blefe e dedução,"Contexto: festa junina da escola. A pamonha premiada da quermesse sumiu da barraca minutos antes do concurso, e todos na fila são suspeitos.
+Papel dos jogadores: convidados da festa que jogam cartas viradas declarando o que viram (""vi o padre perto da barraca"", ""tinha milho no chapéu dele"").
+Objetivo: livrar-se primeiro de todas as cartas da mão, sem ser pego mentindo.
+Tensão: qualquer um pode gritar ""Pamonha!"" para desafiar a última declaração; quem errar no desafio, ou for pego na mentira, recolhe a pilha da mesa.
+Clima: leve, engraçado e rápido, para jogar entre parentes de várias idades, incluindo crianças a partir de 8 anos.
+Na mesa: regras que caibam numa explicação de 2 minutos e rodadas curtas com muita risada."
+4,Estufa Rival,guiado,cartas,dificil,2,40,papel;caneta,,draft;colecao-conjuntos,Draft de cartas;Coleção de conjuntos,"Contexto: dois botânicos rivais disputam a vaga de curador do jardim botânico mais antigo da cidade. A banca vai visitar as estufas dos dois ao fim de três estações.
+Papel dos jogadores: botânicos montando a própria estufa com plantas, ferramentas e condições de clima.
+Objetivo: ter a estufa com mais pontos ao fim de três estações; ganha ponto quem forma conjuntos por família (orquídeas, cactos, samambaias, carnívoras) e quem atende às exigências de clima de cada planta.
+Tensão: a cada estação os dois fazem draft de uma mão compartilhada: pegam uma carta e passam o resto. Pegar a carta que o rival precisa (hate draft) atrasa o próprio conjunto, e algumas plantas só pontuam vizinhas de certas outras.
+Clima: estratégico e elegante, competitivo mas silencioso, para quem gosta de planejar.
+Na mesa: decisões apertadas a cada carta; a caneta serve para anotar os pontos de cada estação num placar simples."
+5,Naufrágio do Santa Inês,livre,tabuleiro,medio,1,25,papel;caneta;dado,clipe de papel,,,"Quero um jogo solo de exploração submarina. Sou uma mergulhadora que desce até o casco do galeão Santa Inês, afundado em 1702 na costa da Bahia, atrás de um baú com cartas náuticas perdidas.
+O tabuleiro (uma folha A4) é um corte lateral do navio, com casas do convés até o porão; um clipe de papel é a minha mergulhadora.
+A cada turno rolo o dado para nadar, mas cada casa gasta ar, que eu marco a caneta numa barra de oxigênio na própria folha. Quanto mais fundo, mais tesouros, e também mais correntes, enguias e passagens desabadas, sorteadas pelas cartas.
+Preciso decidir quando voltar: se o ar acabar antes de subir, perco tudo o que juntei.
+Clima: tenso e silencioso, com sensação de ""só mais uma sala"".
+Vitória clara: voltar à superfície com o baú; derrota: ficar sem ar. Quero também uma pontuação para tentar bater o meu próprio recorde."
+6,Rádio na Neblina,livre,cartas,facil,8,20,papel;caneta,tampinhas,,,"Ideia: um jogo cooperativo para um grupo grande de amigos. Uma equipe de resgate está espalhada numa serra coberta de neblina e precisa encontrar um grupo de trilheiros perdidos antes do anoitecer.
+Os jogadores só se comunicam pelo rádio, que chia: cada um vê pedaços do mapa nas próprias cartas, mas só pode dar uma dica curta por vez (uma palavra, um número ou um som), nunca mostrar a carta.
+O grupo vence se juntar as pistas certas e marcar a posição dos trilheiros antes de o baralho do pôr do sol acabar; as tampinhas marcam as trilhas já vasculhadas.
+Quero que funcione bem com 8 pessoas sem ninguém ficar esperando muito: turnos simultâneos ou rápidos, e regras simples para quem nunca jogou jogo de tabuleiro.
+Clima: colaborativo e divertido, com momentos de ""ahhh, era isso que você quis dizer!""."
