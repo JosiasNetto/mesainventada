@@ -252,13 +252,74 @@ export function promptComReferencias(entrada, mecanicas, { modo = 'novo', refere
   return [{ role: 'system', content: sistema(entrada) }, { role: 'user', content: user }];
 }
 
-export function extrairJSON(texto) {
+// Modelos fracos às vezes escrevem texto depois do JSON ("Invalid JSON... I'll re-output") ou repetem o objeto corrigido.
+// Por isso cada objeto { ... } completo da resposta vira um candidato separado, respeitando chaves dentro de strings.
+export function extrairObjetosJSON(texto) {
   const s = String(texto ?? '').replace(/```(json)?/g, '');
-  try {
-    return JSON.parse(s.slice(s.indexOf('{'), s.lastIndexOf('}') + 1));
-  } catch {
-    throw new Error('A IA respondeu em um formato inesperado. Clique em CRIAR JOGO de novo ou troque o modelo em ⚙ Configurar.');
+  const objetos = [];
+  let inicio = -1;
+  let profundidade = 0;
+  let emString = false;
+  let escape = false;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (emString) {
+      if (escape) escape = false;
+      else if (ch === '\\') escape = true;
+      else if (ch === '"') emString = false;
+    } else if (ch === '"' && profundidade > 0) emString = true;
+    else if (ch === '{') {
+      if (profundidade === 0) inicio = i;
+      profundidade++;
+    } else if (ch === '}' && profundidade > 0 && --profundidade === 0) {
+      try { objetos.push(JSON.parse(s.slice(inicio, i + 1))); } catch { /* candidato quebrado: ignora */ }
+    }
   }
+  if (!objetos.length) {
+    try { objetos.push(JSON.parse(s.slice(s.indexOf('{'), s.lastIndexOf('}') + 1))); } catch { /* sem JSON */ }
+  }
+  return objetos.filter(o => o && typeof o === 'object' && !Array.isArray(o));
+}
+
+export function extrairJSON(texto) {
+  const [primeiro] = extrairObjetosJSON(texto);
+  if (!primeiro) throw new Error('A IA respondeu em um formato inesperado. Clique em CRIAR JOGO de novo ou troque o modelo em ⚙ Configurar.');
+  return primeiro;
+}
+
+// Aspas seguidas de dois-pontos (fim':'... ou tabuleiro":{) dentro de um texto do kit são restos de JSON que o modelo quebrou.
+const RESTO_DE_JSON = /["']\s*:\s*["'[{]|\{\s*"[a-z_]+"\s*:/i;
+
+// Devolve o primeiro problema estrutural do kit (texto curto) ou '' se ele pode virar uma versão.
+export function problemaNoFormatoKit(kit) {
+  if (!kit || typeof kit !== 'object') return 'a resposta não é um kit';
+  for (const campo of ['titulo', 'objetivo', 'fim']) {
+    if (typeof kit[campo] !== 'string' || !kit[campo].trim()) return `falta o campo "${campo}"`;
+  }
+  for (const campo of ['preparacao', 'turno', 'rodada']) {
+    if (!Array.isArray(kit[campo]) || !kit[campo].length || kit[campo].some(p => typeof p !== 'string')) return `o campo "${campo}" não é uma lista de passos`;
+  }
+  if (!Array.isArray(kit.cartas) || !kit.cartas.length || kit.cartas.some(c => !c || typeof c !== 'object' || !String(c.nome ?? '').trim())) {
+    return 'faltam as cartas';
+  }
+  const textos = [
+    ['titulo', kit.titulo], ['objetivo', kit.objetivo], ['fim', kit.fim], ['provocacao', kit.provocacao],
+    ...['preparacao', 'turno', 'rodada'].flatMap(campo => kit[campo].map(t => [campo, t])),
+    ...kit.cartas.flatMap(c => [['cartas', c.nome], ['cartas', c.texto]]),
+  ];
+  const quebrado = textos.find(([, t]) => typeof t === 'string' && RESTO_DE_JSON.test(t));
+  return quebrado ? `o campo "${quebrado[0]}" tem pedaços de JSON misturados ao texto` : '';
+}
+
+// Escolhe o último candidato bem formado (o "corrigido", quando o modelo repete o objeto) ou explica o problema do primeiro.
+export function extrairKit(texto) {
+  const candidatos = extrairObjetosJSON(texto);
+  const validos = candidatos.filter(k => !problemaNoFormatoKit(k));
+  if (validos.length) return validos[validos.length - 1];
+  const motivo = candidatos.length ? problemaNoFormatoKit(candidatos[0]) : 'a resposta não tem JSON';
+  const erro = new Error(`A IA devolveu um kit com o formato quebrado (${motivo}).`);
+  erro.formatoQuebrado = true;
+  throw erro;
 }
 
 export function mensagemDeErro(status) {
@@ -323,14 +384,24 @@ async function enviarTexto({ chave, corpo, modeloMetricas }) {
   const motivo = dados.error?.message ? ` (${nomeProvedor}: ${dados.error.message})` : '';
   if (!res.ok) throw new Error(mensagemDeErro(res.status) + motivo);
   if (dados.error) throw new Error(mensagemDeErro(Number(dados.error.code) || 500) + motivo);
-  const json = extrairJSON(dados.choices?.[0]?.message?.content);
+  const conteudo = String(dados.choices?.[0]?.message?.content ?? '');
   const metricas = extrairMetricas(dados, duracaoMs, modeloMetricas);
   const preco = usarOpenAI && PRECO_TEXTO_OPENAI[metricas.modelo.replace(/-\d{4}-\d{2}-\d{2}$/, '')];
   if (preco && !metricas.custoUsd) {
     metricas.custoUsd = (metricas.promptTokens * preco[0] + metricas.completionTokens * preco[1]) / 1e6;
   }
-  return { json, metricas };
+  return { conteudo, metricas };
 }
+
+const somarMetricas = (a, b) => ({
+  ...b,
+  duracaoMs: a.duracaoMs + b.duracaoMs,
+  promptTokens: a.promptTokens + b.promptTokens,
+  completionTokens: a.completionTokens + b.completionTokens,
+  imageTokens: a.imageTokens + b.imageTokens,
+  totalTokens: a.totalTokens + b.totalTokens,
+  custoUsd: a.custoUsd + b.custoUsd,
+});
 
 export async function chamarLLMComMetricas({ chave, modelo, mensagens, semente }) {
   const usarOpenAI = ehChaveOpenAI(chave);
@@ -339,8 +410,19 @@ export async function chamarLLMComMetricas({ chave, modelo, mensagens, semente }
   const corpo = usarOpenAI
     ? { model: modeloResolvido, messages: mensagens, seed: semente, response_format: { type: 'json_object' } }
     : { models, messages: mensagens, seed: semente, response_format: { type: 'json_object' } };
-  const { json: kit, metricas } = await enviarTexto({ chave, corpo, modeloMetricas: usarOpenAI ? modeloResolvido : models[0] });
-  return { kit, metricas };
+  // Um kit com formato quebrado nunca vira versão: pede de novo uma vez e, se falhar, mantém a versão atual.
+  let gasto = null;
+  for (let tentativa = 1; tentativa <= 2; tentativa++) {
+    const { conteudo, metricas } = await enviarTexto({ chave, corpo, modeloMetricas: usarOpenAI ? modeloResolvido : models[0] });
+    gasto = gasto ? somarMetricas(gasto, metricas) : metricas;
+    try {
+      return { kit: extrairKit(conteudo), metricas: gasto };
+    } catch (e) {
+      if (tentativa === 2) {
+        throw new Error(`${e.message} Tentamos duas vezes e a versão atual foi mantida. Tente de novo ou troque o modelo de texto em ⚙ Configurar.`);
+      }
+    }
+  }
 }
 
 // Rubrica de qualidade do artefato: 5 critérios de 0 a 2; um kit bom soma 8 ou mais em 10.
@@ -395,8 +477,8 @@ export async function avaliarKit({ chave, kit, entrada, mecanicas }) {
   const corpo = ehChaveOpenAI(chave)
     ? { model: MODELO_AVALIADOR_OPENAI, messages, response_format: { type: 'json_object' }, reasoning_effort: 'minimal' }
     : { model: MODELO_AVALIADOR_OPENROUTER, messages, response_format: { type: 'json_object' }, reasoning: { effort: 'minimal' } };
-  const { json, metricas } = await enviarTexto({ chave, corpo, modeloMetricas: corpo.model });
-  return { avaliacao: normalizarAvaliacao(json), metricas };
+  const { conteudo, metricas } = await enviarTexto({ chave, corpo, modeloMetricas: corpo.model });
+  return { avaliacao: normalizarAvaliacao(extrairJSON(conteudo)), metricas };
 }
 
 export async function chamarLLM(opcoes) {

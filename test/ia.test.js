@@ -27,6 +27,9 @@ import {
   avaliarKit,
   CRITERIOS_RUBRICA,
   MODELO_AVALIADOR_OPENAI,
+  extrairObjetosJSON,
+  extrairKit,
+  problemaNoFormatoKit,
 } from '../src/ia.js';
 
 import { catalogo } from '../src/mecanicas.js';
@@ -387,4 +390,66 @@ test('avaliarKit com chave da OpenAI usa o gpt-5-nano com raciocínio mínimo e 
   assert.equal(avaliacao.total, 10);
   assert.equal(avaliacao.bom, true);
   assert.equal(metricas.custoUsd, (1000 * 0.05 + 200 * 0.40) / 1e6);
+});
+
+// Reprodução do kit revisado "Reerguer Ribeira": o modelo quebrou o JSON, o resto do kit foi parar dentro do turno
+// e ele escreveu texto depois ("PMID... Invalid JSON... I'll re-output corrected JSON").
+const respostaQuebradaRibeira = JSON.stringify({
+  titulo: 'Reerguer Ribeira',
+  objetivo: 'Ser o líder com mais influência nos setores ao fim de 6 rodadas.',
+  preparacao: ['Imprima o tabuleiro A4 e recorte as cartas.', 'Distribua 5 cartas para cada jogador.'],
+  turno: [
+    '1. Planejamento (negociação): 3 minutos.',
+    '6. Final do turno: compre cartas até ter 5.',
+    "fim':'Após 6 rodadas, conte controle dos 5 setores. Maior pontuação vence.'",
+    'tabuleiro":{"titulo":"Planta de Reerguimento de Ribeira","tipo":"trilha","casas":[{"numero":1,"nome":"Cais Baixo","efeito":"Setor exposto."}]},"cartas":[{"nome":"Tijolo","texto":"Recurso tijolos.","quantidade":6}],"rodada":["1. João (Porto) troca 1 Tijolo por 2 Peixe com Ana.","3. Lúcio conclui o Projeto.',
+    '4. Mariana (Morro) propõe Doação.',
+    '5. Fim da ronda: rola-se a maré."],"provocacao":"É necessário que haja um único vencedor?"} PMID: 1234567890. Invalid JSON. Correction: remove trailing text. Let\'s craft final JSON without extra quotes issues: earlier',
+  ],
+}) + ' Oops I included extra text after JSON. I\'ll re-output corrected JSON.';
+
+test('problemaNoFormatoKit recusa o kit revisado quebrado e aceita o kit de exemplo', () => {
+  const [quebrado] = extrairObjetosJSON(respostaQuebradaRibeira);
+  assert.ok(problemaNoFormatoKit(quebrado));
+  assert.equal(problemaNoFormatoKit(kitExemplo), '');
+  assert.match(problemaNoFormatoKit({ ...kitExemplo, turno: [...kitExemplo.turno, 'tabuleiro":{"titulo":"x"}'] }), /pedaços de JSON/);
+  assert.match(problemaNoFormatoKit({ ...kitExemplo, cartas: [] }), /cartas/);
+  assert.throws(() => extrairKit(respostaQuebradaRibeira), e => e.formatoQuebrado && /formato quebrado/.test(e.message));
+});
+
+test('extrairKit ignora texto extra e fica com o objeto corrigido quando o modelo repete o JSON', () => {
+  const corrigido = { ...kitExemplo, titulo: 'Corrigido' };
+  const resposta = `${JSON.stringify({ ...kitExemplo, cartas: [] })} Invalid JSON. Let's re-output: ${JSON.stringify(corrigido)} pronto {sem json}`;
+  assert.equal(extrairObjetosJSON(resposta).length, 2);
+  assert.equal(extrairKit(resposta).titulo, 'Corrigido');
+  const comChaveNoTexto = { ...kitExemplo, cartas: [{ nome: 'Chave {mestra}', texto: 'Abre a porta } trancada.', quantidade: 1 }, ...kitExemplo.cartas] };
+  assert.equal(extrairKit(`Aqui está: ${JSON.stringify(comChaveNoTexto)}`).cartas[0].nome, 'Chave {mestra}');
+});
+
+test('chamarLLMComMetricas pede de novo quando o kit vem quebrado e soma o gasto das duas chamadas', async () => {
+  const respostas = [respostaQuebradaRibeira, JSON.stringify(kitExemplo)];
+  let chamadas = 0;
+  globalThis.fetch = async () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({ usage: { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150, cost: 0.001 }, choices: [{ message: { content: respostas[chamadas++] } }] }),
+  });
+  const { kit, metricas } = await chamarLLMComMetricas({ chave: 'sk-or-v1-' + 'a1'.repeat(32), modelo: MODELO_PADRAO, mensagens: [] });
+  assert.equal(chamadas, 2);
+  assert.equal(kit.titulo, kitExemplo.titulo);
+  assert.equal(metricas.totalTokens, 300);
+  assert.equal(metricas.custoUsd, 0.002);
+});
+
+test('chamarLLMComMetricas falha com aviso e não devolve kit quando as duas tentativas vêm quebradas', async () => {
+  let chamadas = 0;
+  globalThis.fetch = async () => {
+    chamadas++;
+    return { ok: true, status: 200, json: async () => ({ choices: [{ message: { content: respostaQuebradaRibeira } }] }) };
+  };
+  await assert.rejects(
+    chamarLLMComMetricas({ chave: 'sk-or-v1-' + 'a1'.repeat(32), modelo: MODELO_PADRAO, mensagens: [] }),
+    /formato quebrado.*versão atual foi mantida/s,
+  );
+  assert.equal(chamadas, 2);
 });
