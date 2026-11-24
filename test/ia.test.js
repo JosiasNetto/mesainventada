@@ -453,3 +453,18 @@ test('chamarLLMComMetricas falha com aviso e não devolve kit quando as duas ten
   );
   assert.equal(chamadas, 2);
 });
+
+test('o limite de espera do texto é 90 s na OpenRouter e 150 s nos modelos da OpenAI', async () => {
+  const tempoEsgotado = () => { throw Object.assign(new Error('timeout'), { name: 'TimeoutError' }); };
+  const timeoutOriginal = AbortSignal.timeout;
+  const limites = [];
+  AbortSignal.timeout = ms => { limites.push(ms); return timeoutOriginal.call(AbortSignal, ms); };
+  globalThis.fetch = async () => tempoEsgotado();
+  try {
+    await assert.rejects(chamarLLMComMetricas({ chave: 'sk-or-v1-' + 'a1'.repeat(32), mensagens: [] }), /mais de 90 segundos/);
+    await assert.rejects(chamarLLMComMetricas({ chave: 'sk-proj-' + 'a1'.repeat(24), mensagens: [] }), /mais de 150 segundos/);
+  } finally {
+    AbortSignal.timeout = timeoutOriginal;
+  }
+  assert.deepEqual(limites, [90_000, 150_000]);
+});

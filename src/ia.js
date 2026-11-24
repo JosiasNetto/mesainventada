@@ -18,6 +18,10 @@ const PRECO_TEXTO_OPENAI = { 'gpt-5-nano': [0.05, 0.40], 'gpt-5-mini': [0.25, 2.
 // Avaliador da rubrica: o modelo de texto mais barato da OpenAI, com raciocínio mínimo para responder em poucos segundos.
 export const MODELO_AVALIADOR_OPENAI = 'gpt-5-nano';
 const MODELO_AVALIADOR_OPENROUTER = 'openai/gpt-5-nano';
+// Limite de espera do texto: modelos grátis da OpenRouter às vezes travam sem responder; os GPT-5 da OpenAI raciocinam
+// antes de responder (gpt-5-mini ~63 s, gpt-5 95-112 s por kit, docs/avaliacao-tempo-custo.md, seção 5).
+const LIMITE_TEXTO_MS_OPENROUTER = 90_000;
+const LIMITE_TEXTO_MS_OPENAI = 150_000;
 const URL_API = 'https://openrouter.ai/api/v1/chat/completions';
 const URL_API_OPENAI = 'https://api.openai.com/v1/chat/completions';
 const URL_API_IMAGENS_OPENAI = 'https://api.openai.com/v1/images/generations';
@@ -366,6 +370,7 @@ export function extrairImagem(dados) {
 async function enviarTexto({ chave, corpo, modeloMetricas }) {
   const usarOpenAI = ehChaveOpenAI(chave);
   const nomeProvedor = usarOpenAI ? 'OpenAI' : 'OpenRouter';
+  const limiteMs = usarOpenAI ? LIMITE_TEXTO_MS_OPENAI : LIMITE_TEXTO_MS_OPENROUTER;
   const inicio = Date.now();
   let res;
   try {
@@ -373,10 +378,10 @@ async function enviarTexto({ chave, corpo, modeloMetricas }) {
       method: 'POST',
       headers: { Authorization: `Bearer ${chave}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(corpo),
-      signal: AbortSignal.timeout(90_000),
+      signal: AbortSignal.timeout(limiteMs),
     });
   } catch (e) {
-    if (e?.name === 'TimeoutError') throw new Error('A IA demorou mais de 90 segundos. Tente de novo ou troque o modelo em ⚙ Configurar.');
+    if (e?.name === 'TimeoutError') throw new Error(`A IA demorou mais de ${limiteMs / 1000} segundos. Tente de novo ou troque o modelo em ⚙ Configurar.`);
     throw new Error(`Sem conexão com a ${nomeProvedor}. Verifique a internet e tente de novo.`);
   }
   const duracaoMs = Date.now() - inicio;
