@@ -365,44 +365,77 @@ test('promptAvaliacao traz os 5 critérios, o pedido do formulário e o kit sem 
   assert.ok(!t.includes('base64'));
 });
 
-test('normalizarAvaliacao limita notas a 0..2, completa critérios ausentes e soma o total', () => {
-  const a = normalizarAvaliacao({ criterios: [
-    { id: 'jogavel', nota: 2, justificativa: 'ok' },
-    { id: 'fiel', nota: 5, justificativa: 'exagero' },
-    { id: 'rodada', nota: -1 },
-    { id: 'clareza', nota: '1' },
-  ] });
-  assert.deepEqual(a.criterios.map(c => c.nota), [2, 2, 0, 1, 0]);
-  assert.equal(a.total, 5);
-  assert.equal(a.maximo, 10);
-  assert.equal(a.bom, false);
-  assert.match(a.criterios[4].justificativa, /não justificou/);
-  assert.equal(normalizarAvaliacao({ criterios: CRITERIOS_RUBRICA.map(c => ({ id: c.id, nota: c.id === 'fiel' ? 0 : 2 })) }).bom, true);
+test('normalizarAvaliacao recusa avaliações incompletas em vez de completar com zero', () => {
+  const completa = () => CRITERIOS_RUBRICA.map(c => ({ id: c.id, nota: 2, justificativa: 'cumpre' }));
+  assert.equal(normalizarAvaliacao({ criterios: completa() }).total, 10);
+  const semUm = completa().slice(0, 4);
+  assert.throws(() => normalizarAvaliacao({ criterios: semUm }), /Provocação útil/);
+  const semJustificativa = completa().map((c, i) => (i === 0 ? { ...c, justificativa: '' } : c));
+  assert.throws(() => normalizarAvaliacao({ criterios: semJustificativa }), /Jogável/);
+  const foraDaEscala = completa().map((c, i) => (i === 1 ? { ...c, nota: 5 } : c));
+  assert.throws(() => normalizarAvaliacao({ criterios: foraDaEscala }), /Fiel ao pedido/);
   assert.throws(() => normalizarAvaliacao({}), /formato inesperado/);
 });
 
-test('avaliarKit com chave da OpenAI usa o gpt-5-nano com raciocínio mínimo e calcula o custo', async () => {
-  let pedido;
+test('normalizarAvaliacao aceita nota "2/2" e acha critérios pelo nome ou pela ordem', () => {
+  const porNome = CRITERIOS_RUBRICA.map(c => ({ nome: c.nome.toUpperCase(), nota: '1/2', justificativa: 'em parte' })).reverse();
+  const a = normalizarAvaliacao({ criterios: porNome });
+  assert.deepEqual(a.criterios.map(c => c.id), CRITERIOS_RUBRICA.map(c => c.id));
+  assert.equal(a.total, 5);
+  const semIds = CRITERIOS_RUBRICA.map((c, i) => ({ id: `criterio-${i + 1}`, nota: String(i % 3), justificativa: 'ok' }));
+  assert.deepEqual(normalizarAvaliacao({ criterios: semIds }).criterios.map(c => c.nota), [0, 1, 2, 0, 1]);
+});
+
+test('promptAvaliacao pede a justificativa antes da nota e define cada nível da escala', () => {
+  const t = texto(promptAvaliacao(entradaExemplo, [], kitExemplo));
+  assert.ok(t.indexOf('"justificativa"') < t.indexOf('"nota"'));
+  assert.match(t, /2 = cumpre/);
+  assert.match(t, /0 = não cumpre/);
+  assert.match(t, /a nota não pode ser 0/);
+});
+
+const respostaAvaliador = notas => ({
+  ok: true,
+  status: 200,
+  json: async () => ({
+    model: 'gpt-5-nano-2025-08-07',
+    usage: { prompt_tokens: 1000, completion_tokens: 200, total_tokens: 1200 },
+    choices: [{ message: { content: JSON.stringify({ criterios: CRITERIOS_RUBRICA.map((c, i) => ({ id: c.id, justificativa: `nota ${notas[i]}`, nota: notas[i] })) }) } }],
+  }),
+});
+
+test('avaliarKit faz 3 avaliações com gpt-5-nano em raciocínio low e usa a mediana de cada critério', async () => {
+  const pedidos = [];
+  const amostras = [[0, 0, 0, 0, 0], [2, 2, 1, 2, 1], [2, 1, 1, 2, 2]];
   globalThis.fetch = async (url, opts) => {
-    pedido = { url, corpo: JSON.parse(opts.body) };
-    return {
-      ok: true,
-      status: 200,
-      json: async () => ({
-        model: 'gpt-5-nano-2025-08-07',
-        usage: { prompt_tokens: 1000, completion_tokens: 200, total_tokens: 1200 },
-        choices: [{ message: { content: JSON.stringify({ criterios: CRITERIOS_RUBRICA.map(c => ({ id: c.id, nota: 2, justificativa: 'cumpre' })) }) } }],
-      }),
-    };
+    pedidos.push({ url, corpo: JSON.parse(opts.body) });
+    return respostaAvaliador(amostras[pedidos.length - 1]);
   };
   const { avaliacao, metricas } = await avaliarKit({ chave: 'sk-proj-' + 'a1'.repeat(24), kit: kitIlustrado(), entrada: entradaExemplo, mecanicas: [] });
-  assert.equal(pedido.url, 'https://api.openai.com/v1/chat/completions');
-  assert.equal(pedido.corpo.model, MODELO_AVALIADOR_OPENAI);
-  assert.equal(pedido.corpo.reasoning_effort, 'minimal');
-  assert.ok(!JSON.stringify(pedido.corpo).includes('base64'));
-  assert.equal(avaliacao.total, 10);
-  assert.equal(avaliacao.bom, true);
-  assert.equal(metricas.custoUsd, (1000 * 0.05 + 200 * 0.40) / 1e6);
+  assert.equal(pedidos.length, 3);
+  assert.ok(pedidos.every(p => p.url === 'https://api.openai.com/v1/chat/completions'));
+  assert.equal(pedidos[0].corpo.model, MODELO_AVALIADOR_OPENAI);
+  assert.equal(pedidos[0].corpo.reasoning_effort, 'low');
+  assert.ok(!JSON.stringify(pedidos[0].corpo).includes('base64'));
+  assert.deepEqual(avaliacao.criterios.map(c => c.nota), [2, 1, 1, 2, 1]);
+  assert.equal(avaliacao.criterios[1].justificativa, 'nota 1');
+  assert.equal(avaliacao.total, 7);
+  assert.equal(avaliacao.amostras, 3);
+  assert.equal(metricas.totalTokens, 3600);
+  assert.ok(Math.abs(metricas.custoUsd - 3 * (1000 * 0.05 + 200 * 0.40) / 1e6) < 1e-12);
+});
+
+test('avaliarKit descarta uma avaliação incompleta e falha se sobrar menos de duas', async () => {
+  let n = 0;
+  const incompleta = { ok: true, status: 200, json: async () => ({ choices: [{ message: { content: '{"criterios":[]}' } }] }) };
+  globalThis.fetch = async () => (++n === 1 ? incompleta : respostaAvaliador([2, 2, 2, 2, 1]));
+  const { avaliacao } = await avaliarKit({ chave: 'sk-proj-' + 'a1'.repeat(24), kit: kitExemplo, entrada: entradaExemplo, mecanicas: [] });
+  assert.equal(avaliacao.total, 9);
+  assert.equal(avaliacao.amostras, 2);
+
+  n = 0;
+  globalThis.fetch = async () => (++n === 1 ? respostaAvaliador([2, 2, 2, 2, 2]) : incompleta);
+  await assert.rejects(avaliarKit({ chave: 'sk-proj-' + 'a1'.repeat(24), kit: kitExemplo, entrada: entradaExemplo, mecanicas: [] }), /formato inesperado/);
 });
 
 // Reprodução do kit revisado "Reerguer Ribeira": o modelo quebrou o JSON, o resto do kit foi parar dentro do turno

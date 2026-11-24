@@ -762,7 +762,10 @@ function renderRubrica() {
 
   const rodape = el('div', null, 'rubrica-rodape');
   const legenda = el('p', `Cada critério vale de 0 a 2, e um kit bom soma ${NOTA_BOA_RUBRICA} ou mais em 10. As travas automáticas conferem os limites estruturais antes da rubrica.`, 'metricas-orcamento');
-  if (a?.metricas) legenda.textContent += ` Avaliado por ${a.metricas.modelo} em ${formatarSegundos(a.metricas.duracaoMs)} · ${formatarUsd(a.metricas.custoUsd)}.`;
+  if (a?.metricas) {
+    const amostras = a.amostras > 1 ? ` (mediana de ${a.amostras} avaliações)` : '';
+    legenda.textContent += ` Avaliado por ${a.metricas.modelo}${amostras} em ${formatarSegundos(a.metricas.duracaoMs)} · ${formatarUsd(a.metricas.custoUsd)}.`;
+  }
   rodape.append(legenda, botao);
   filhos.push(rodape);
   caixa.replaceChildren(...filhos);

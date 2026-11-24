@@ -15,7 +15,8 @@ export const MODELO_IMAGEM_PADRAO_OPENAI = 'gpt-image-1-mini';
 const PRECO_IMAGEM_OPENAI = { 'gpt-image-1-mini': [2.00, 8.00], 'gpt-image-1': [5.00, 40.00] };
 // A API de texto da OpenAI também não devolve custo: US$ por 1M de tokens [entrada, saída] (tabela oficial, Standard tier).
 const PRECO_TEXTO_OPENAI = { 'gpt-5-nano': [0.05, 0.40], 'gpt-5-mini': [0.25, 2.00], 'gpt-5': [1.25, 10.00] };
-// Avaliador da rubrica: o modelo de texto mais barato da OpenAI, com raciocínio mínimo para responder em poucos segundos.
+// Avaliador da rubrica: o modelo de texto mais barato da OpenAI. Com raciocínio "minimal" ele dava notas que contradiziam
+// as próprias justificativas (o mesmo kit ia de 0 a 7 em 10); com "low" e 3 avaliações combinadas a nota fica estável.
 export const MODELO_AVALIADOR_OPENAI = 'gpt-5-nano';
 const MODELO_AVALIADOR_OPENROUTER = 'openai/gpt-5-nano';
 // Limite de espera do texto: modelos grátis da OpenRouter às vezes travam sem responder; os GPT-5 da OpenAI raciocinam
@@ -452,12 +453,17 @@ export function promptAvaliacao(entrada, mecanicas, kit) {
   const e = entrada && typeof entrada === 'object' ? entrada : {};
   const { mudancas, ...kitAvaliado } = kitSemImagens(kit) ?? {};
   const sistemaAvaliador = `Você é o avaliador de qualidade da ferramenta MesaInventada. Você NÃO reescreve o jogo: só dá notas.
-Avalie o kit com esta rubrica. Cada critério vale 0, 1 ou 2 (0 = não cumpre, 1 = cumpre em parte, 2 = cumpre).
+Avalie o kit com esta rubrica. Cada critério vale 0, 1 ou 2:
+- 2 = cumpre: você não encontrou nenhum problema concreto.
+- 1 = cumpre em parte: há um problema concreto, mas o critério é atendido no geral.
+- 0 = não cumpre: o critério falha por completo (ex.: falta a parte avaliada ou ela contradiz o kit).
+Critérios:
 ${CRITERIOS_RUBRICA.map(c => `- "${c.id}" (${c.nome}): ${c.avalia}. Como verificar: ${c.verificacao}.`).join('\n')}
-Seja rigoroso: dê 2 só quando não houver problema concreto. Ao tirar ponto, a justificativa diz o problema exato.
+Para cada critério, primeiro escreva a justificativa com o que você conferiu no kit e depois dê a nota que ela sustenta.
+Se a justificativa diz que o critério é atendido, a nota não pode ser 0.
 Responda SOMENTE com um objeto JSON, sem nada fora dele, neste formato:
-{"criterios":[${CRITERIOS_RUBRICA.map(c => `{"id":"${c.id}","nota":0,"justificativa":""}`).join(',')}]}
-"justificativa": português do Brasil, uma frase com até 140 caracteres.`;
+{"criterios":[${CRITERIOS_RUBRICA.map(c => `{"id":"${c.id}","justificativa":"","nota":0}`).join(',')}]}
+"justificativa": português do Brasil, uma frase com até 140 caracteres, nunca vazia. "nota": o número 0, 1 ou 2.`;
   const lista = Array.isArray(mecanicas) ? mecanicas : [];
   const user = [
     'Pedido feito no formulário:',
@@ -472,25 +478,64 @@ Responda SOMENTE com um objeto JSON, sem nada fora dele, neste formato:
   return [{ role: 'system', content: sistemaAvaliador }, { role: 'user', content: user }];
 }
 
+const semAcento = t => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+// Aceita 2, "2" e "2/2"; qualquer outra coisa (ou fora de 0..2) invalida a avaliação.
+function lerNota(valor) {
+  const n = typeof valor === 'number' ? valor : Number(String(valor ?? '').trim().match(/^(\d+)(?:\s*\/\s*2)?$/)?.[1]);
+  return Number.isInteger(n) && n >= 0 && n <= 2 ? n : null;
+}
+
+// Uma avaliação só vale se trouxer os 5 critérios, cada um com nota 0..2 e justificativa. Acha cada critério pelo id,
+// pelo nome ("Fiel ao pedido") ou, se nenhum id/nome bater e vierem exatamente 5, pela ordem da rubrica.
 export function normalizarAvaliacao(resposta) {
-  const recebidos = Array.isArray(resposta?.criterios) ? resposta.criterios : [];
-  if (!recebidos.length) throw new Error('O avaliador respondeu em um formato inesperado. Clique em ↻ reavaliar.');
-  const criterios = CRITERIOS_RUBRICA.map(c => {
-    const r = recebidos.find(x => x?.id === c.id) ?? {};
-    const nota = Math.min(2, Math.max(0, Math.round(Number(r.nota) || 0)));
-    return { id: c.id, nome: c.nome, nota, justificativa: String(r.justificativa ?? '').trim() || 'O avaliador não justificou esta nota.' };
+  const recebidos = (Array.isArray(resposta?.criterios) ? resposta.criterios : []).filter(x => x && typeof x === 'object');
+  const achar = (c, i) => recebidos.find(x => semAcento(x.id) === c.id || semAcento(x.id ?? x.nome) === semAcento(c.nome))
+    ?? (recebidos.length === CRITERIOS_RUBRICA.length && !recebidos.some(x => CRITERIOS_RUBRICA.some(k => semAcento(x.id) === k.id)) ? recebidos[i] : null);
+  const criterios = CRITERIOS_RUBRICA.map((c, i) => {
+    const r = achar(c, i);
+    const nota = lerNota(r?.nota);
+    const justificativa = String(r?.justificativa ?? '').trim();
+    if (nota === null || !justificativa) {
+      throw new Error(`O avaliador respondeu em um formato inesperado (critério "${c.nome}"). Clique em ↻ reavaliar.`);
+    }
+    return { id: c.id, nome: c.nome, nota, justificativa };
   });
   const total = criterios.reduce((s, c) => s + c.nota, 0);
   return { criterios, total, maximo: NOTA_MAXIMA_RUBRICA, bom: total >= NOTA_BOA_RUBRICA };
 }
 
+// Combina avaliações independentes pela mediana de cada critério, com a justificativa de quem deu a nota escolhida.
+export function combinarAvaliacoes(avaliacoes) {
+  const criterios = CRITERIOS_RUBRICA.map((c, i) => {
+    const doCriterio = avaliacoes.map(a => a.criterios[i]).sort((x, y) => x.nota - y.nota);
+    return doCriterio[Math.floor((doCriterio.length - 1) / 2)];
+  });
+  const total = criterios.reduce((s, c) => s + c.nota, 0);
+  return { criterios, total, maximo: NOTA_MAXIMA_RUBRICA, bom: total >= NOTA_BOA_RUBRICA, amostras: avaliacoes.length };
+}
+
+export const AVALIACOES_POR_KIT = 3;
+
 export async function avaliarKit({ chave, kit, entrada, mecanicas }) {
   const messages = promptAvaliacao(entrada, mecanicas, kit);
   const corpo = ehChaveOpenAI(chave)
-    ? { model: MODELO_AVALIADOR_OPENAI, messages, response_format: { type: 'json_object' }, reasoning_effort: 'minimal' }
-    : { model: MODELO_AVALIADOR_OPENROUTER, messages, response_format: { type: 'json_object' }, reasoning: { effort: 'minimal' } };
-  const { conteudo, metricas } = await enviarTexto({ chave, corpo, modeloMetricas: corpo.model });
-  return { avaliacao: normalizarAvaliacao(extrairJSON(conteudo)), metricas };
+    ? { model: MODELO_AVALIADOR_OPENAI, messages, response_format: { type: 'json_object' }, reasoning_effort: 'low' }
+    : { model: MODELO_AVALIADOR_OPENROUTER, messages, response_format: { type: 'json_object' }, reasoning: { effort: 'low' } };
+  // Três avaliações em paralelo: o tempo é o da mais lenta e a mediana corta as notas fora da curva.
+  const resultados = await Promise.allSettled(Array.from({ length: AVALIACOES_POR_KIT }, async () => {
+    const { conteudo, metricas } = await enviarTexto({ chave, corpo, modeloMetricas: corpo.model });
+    try {
+      return { avaliacao: normalizarAvaliacao(extrairJSON(conteudo)), metricas };
+    } catch (e) {
+      throw Object.assign(e, { metricas });
+    }
+  }));
+  const gastos = resultados.map(r => r.value?.metricas ?? r.reason?.metricas).filter(Boolean);
+  const validas = resultados.filter(r => r.status === 'fulfilled').map(r => r.value.avaliacao);
+  if (validas.length < 2) throw resultados.find(r => r.status === 'rejected').reason;
+  const metricas = gastos.reduce((a, b) => ({ ...somarMetricas(a, b), duracaoMs: Math.max(a.duracaoMs, b.duracaoMs) }));
+  return { avaliacao: combinarAvaliacoes(validas), metricas };
 }
 
 export async function chamarLLM(opcoes) {
