@@ -137,7 +137,20 @@ test('chamarLLM com chave da OpenAI usa endpoint e formato da OpenAI', async () 
   assert.equal(corpo.models, undefined);
   assert.equal(corpo.seed, 7);
   assert.deepEqual(corpo.response_format, { type: 'json_object' });
+  assert.equal(corpo.reasoning_effort, 'low');
   assert.equal(resolverModelo('gpt-4o', chaveOpenAI), 'gpt-4o');
+});
+
+test('chamarLLM só pede raciocínio "low" aos modelos GPT-5 da OpenAI', async () => {
+  const corpos = [];
+  globalThis.fetch = async (url, opts) => {
+    corpos.push(JSON.parse(opts.body));
+    return { ok: true, status: 200, json: async () => ({ choices: [{ message: { content: JSON.stringify(kitExemplo) } }] }) };
+  };
+  const chaveOpenAI = 'sk-proj-' + 'a1'.repeat(24);
+  for (const modelo of ['gpt-5', 'gpt-5-nano', 'gpt-4o-mini', 'gpt-5-chat-latest']) await chamarLLM({ chave: chaveOpenAI, modelo, mensagens: [] });
+  await chamarLLM({ chave: 'sk-or-v1-' + 'a1'.repeat(32), modelo: 'openai/gpt-5-mini', mensagens: [] });
+  assert.deepEqual(corpos.map(c => c.reasoning_effort), ['low', 'low', undefined, undefined, undefined]);
 });
 
 test('promptKit aceita até cinco mecânicas e pede para combinar todas', () => {

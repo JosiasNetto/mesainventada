@@ -408,12 +408,19 @@ const somarMetricas = (a, b) => ({
   custoUsd: a.custoUsd + b.custoUsd,
 });
 
+// GPT-5 com raciocínio "low" gerou kits ~3,5x mais rápido (16 s contra 56 s) e ~4x mais barato, sem perder nota na rubrica.
+// Os "-chat" e os modelos fora da família GPT-5 não aceitam reasoning_effort.
+const raciocinaPouco = modelo => /^gpt-5/.test(modelo) && !modelo.includes('-chat');
+
 export async function chamarLLMComMetricas({ chave, modelo, mensagens, semente }) {
   const usarOpenAI = ehChaveOpenAI(chave);
   const modeloResolvido = resolverModelo(modelo, chave);
   const models = [...new Set([modeloResolvido, MODELO_PADRAO, ...RESERVAS])].slice(0, 3);
   const corpo = usarOpenAI
-    ? { model: modeloResolvido, messages: mensagens, seed: semente, response_format: { type: 'json_object' } }
+    ? {
+      model: modeloResolvido, messages: mensagens, seed: semente, response_format: { type: 'json_object' },
+      ...(raciocinaPouco(modeloResolvido) ? { reasoning_effort: 'low' } : {}),
+    }
     : { models, messages: mensagens, seed: semente, response_format: { type: 'json_object' } };
   // Um kit com formato quebrado nunca vira versão: pede de novo uma vez e, se falhar, mantém a versão atual.
   let gasto = null;
