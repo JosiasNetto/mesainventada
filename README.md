@@ -10,30 +10,85 @@ Projeto Ferramenta, Criatividade Computacional 2026.2.
 
 Tudo funciona no navegador, numa tela só. Não precisa instalar nada.
 
-## Como conseguir a chave da IA
-
-A ferramenta usa a chave da própria pessoa na OpenRouter, que tem modelos gratuitos:
-
-1. Crie uma conta em [openrouter.ai](https://openrouter.ai) (dá para entrar com Google ou GitHub).
-2. Abra [openrouter.ai/keys](https://openrouter.ai/keys) e clique em "Create API Key". Copie a chave inteira na hora (começa com `sk-or-v1-`): ela só aparece uma vez, e a lista de chaves mostra só um pedaço.
-3. Na MesaInventada, clique em **⚙ Configurar IA** e cole a chave. Modelos terminados em `:free` não cobram nada.
-
-A chave fica salva só no seu navegador e é enviada apenas para a OpenRouter. O modelo padrão é `nvidia/nemotron-3.5-super-vl:free`. Se o modelo escolhido estiver saturado ou fora do ar, a OpenRouter tenta sozinha as reservas gratuitas (`openrouter/free` e `google/gemma-4-31b-it:free`). Modelos grátis mudam com frequência: se algum sumir, troque em ⚙ Configurar IA ou em `src/ia.js`.
-
 ## Rodar localmente
 
+O projeto é um site estático em HTML, CSS e JavaScript puro: não tem build, `npm install` nem dependências. Basta servir a pasta com qualquer servidor HTTP e abrir no navegador.
+
+### O que você precisa
+
+| Para | Precisa de |
+|---|---|
+| Usar a ferramenta | um navegador atualizado (Chrome, Edge, Firefox ou Safari) e um servidor HTTP local (o do Python já serve) |
+| Rodar os testes | [Node.js](https://nodejs.org) 22 ou mais novo |
+| Gerar jogos com IA | uma chave da OpenRouter (gratuita) ou da OpenAI (paga), veja [Configurar a chave da IA](#configurar-a-chave-da-ia) |
+
+### Passo a passo
+
+1. Baixe o código e entre na pasta:
+
+   ```bash
+   git clone https://github.com/JosiasNetto/mesainventada.git
+   cd mesainventada
+   ```
+
+2. Suba um servidor local na raiz do projeto (a pasta onde está o `index.html`):
+
+   ```bash
+   python3 -m http.server 8000
+   ```
+
+   No Windows, use `python -m http.server 8000`. Sem Python, com Node instalado, `npx serve -l 8000` também funciona.
+
+3. Abra **http://localhost:8000** no navegador.
+
+4. Clique em **⚙ Configurar IA**, cole sua chave e clique em **Salvar**.
+
+5. Preencha o tema, escolha uma mecânica (ou clique no exemplo) e clique em **CRIAR JOGO**.
+
+Para parar o servidor, volte ao terminal e aperte `Ctrl+C`.
+
+### Configurar a chave da IA
+
+A ferramenta usa a chave da própria pessoa. Ela fica salva só no seu navegador (`localStorage`) e é enviada apenas para o provedor dela. O tipo de chave decide o provedor:
+
+| | OpenRouter | OpenAI |
+|---|---|---|
+| Onde criar | [openrouter.ai/keys](https://openrouter.ai/keys) → "Create API Key" | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) → "Create new secret key" |
+| A chave começa com | `sk-or-v1-` | `sk-` ou `sk-proj-` |
+| Custo | modelos terminados em `:free` não cobram nada | pago por uso; um kit com a avaliação da rubrica custa cerca de US$ 0,004 |
+| Modelo de texto padrão | `nvidia/nemotron-3.5-super-vl:free` | `gpt-5-mini` |
+| Modelo de imagem padrão | `google/gemini-3.1-flash-lite-image` (pago) | `gpt-image-1-mini` |
+
+Copie a chave inteira na hora em que ela é criada: os sites só a mostram uma vez, e a lista de chaves exibe só um pedaço. Em ⚙ Configurar IA, deixe os campos de modelo em branco para usar os padrões (indicados em cinza) e desligue "Gerar ilustrações das cartas com IA" se não quiser gerar imagens.
+
+Com a OpenRouter, se o modelo escolhido estiver saturado ou fora do ar, ela tenta sozinha as reservas gratuitas (`openrouter/free` e `google/gemma-4-31b-it:free`). Modelos grátis mudam com frequência: se algum sumir, troque em ⚙ Configurar IA ou em `src/ia.js`.
+
+### Testes
+
 ```bash
-python3 -m http.server 8000
-# abra http://localhost:8000
+npm test
 ```
 
-Abrir o `index.html` direto pelo arquivo (`file://`) não funciona, porque os módulos JavaScript precisam de um servidor.
+Roda `node --test test/*.test.js` com o Node 22+. Os testes não chamam nenhuma API (as respostas da IA são simuladas) e não precisam de chave.
 
-## Testes
+### Benchmark de tempo e custo (opcional)
+
+O script `scripts/benchmark-openai.js` faz chamadas reais à OpenAI e mede tempo, tokens e custo dos modelos de texto e imagem. Ele gasta créditos da sua conta (cerca de US$ 0,20 por rodada). Crie um arquivo `.env` na raiz, que o git ignora:
 
 ```bash
-npm test   # Node 22+, sem dependências
+echo "OPENAI_API_KEY=sk-proj-..." > .env
+node scripts/benchmark-openai.js
 ```
+
+Os resultados saem no terminal e em `scripts/resultados-benchmark-openai.json`. A análise está em `docs/avaliacao-tempo-custo.md`.
+
+### Problemas comuns
+
+- **Abri o `index.html` com dois cliques e a página não funciona.** Pelo endereço `file://` o navegador bloqueia os módulos JavaScript. Abra sempre pelo servidor, em `http://localhost:8000`.
+- **`Address already in use`.** A porta 8000 está ocupada. Use outra, por exemplo `python3 -m http.server 8080`, e abra `http://localhost:8080`.
+- **Mudei o código e nada mudou na tela.** O navegador pode estar usando arquivos antigos do cache. Recarregue com `Ctrl+Shift+R` (`Cmd+Shift+R` no Mac).
+- **"Essa não parece uma chave completa".** A chave foi copiada pela metade, provavelmente da lista de chaves do site. Crie uma nova e copie pelo botão de copiar.
+- **Quero começar do zero.** Os projetos e a chave ficam no `localStorage` do navegador. Para apagar tudo, abra as ferramentas de desenvolvedor (`F12`) → Application/Armazenamento → Local Storage → `http://localhost:8000` → Clear.
 
 ## Onde a IA entra e o que ela decide
 
